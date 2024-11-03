@@ -1,0 +1,18 @@
+
+{"signal":[
+
+    {"name":"clk","wave":"p..................."},
+
+    {"name":"dequeue","wave":"0.101..010.1010.1.."},
+    {"name":"is_empty","wave":"1.0......1.0..1.0.."},
+    {"name":"dqueue_rdata","wave":"x..=.===.=..=.=..==","data":"INS0 INS1 INS2 INS3 INS4 INS5 INS6 INS7 INS8"},
+    {"name":"state","wave":"=..===..==...==....","data":"IDLE READ WAIT READ WAIT READ WAIT READ"},
+
+    {"name":"rs_req_o","wave":"0..1......0.1..0.1."},
+
+    {"name":"rs_rdy_i","wave":"0...1..01...01....."},
+
+
+
+
+]}

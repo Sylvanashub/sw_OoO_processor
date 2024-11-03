@@ -1,0 +1,22 @@
+
+{"signal":[
+
+    {"name":"clk","wave":"p..............."},
+
+    {"name":"rs_req_o","wave":"01...0.1...0"},
+    {"name":"rs_rdy_i","wave":"0...10....1."},
+    {"name":"inst_opcode_o","wave":"x=...x.=...x"},
+    {"name":"inst_rs1/2_o","wave":"x=...x.=...x"},
+    {},
+    {"name":"busy_rs1/2_o","wave":"x=...x.=...x"},
+    {"name":"tag_rs1/2_o","wave":"x=...x.=...x"},
+
+    {},
+    {"name":"cdb_wr","wave":"0...10..10.."},
+    {"name":"cdb_wr_addr","wave":"x...=x..=x.."},
+    {"name":"cdb_wr_wdata","wave":"x...=x..=x.."},
+
+
+
+
+]}
