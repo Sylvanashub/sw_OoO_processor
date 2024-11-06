@@ -1,0 +1,9 @@
+to run cacheline_adapter sim :
+	make ss SUB=cache
+
+to run fifo sim :
+	make ss 
+
+to run fetch sim
+	make vcs/top_tb 
+	make run_vcs_top_tb PROG=../testcode/ooo_test.s

@@ -119,7 +119,21 @@ package rv32i_types;
       alu_op_srl = 4'B0101 ,
       alu_op_sra = 4'B1101 ,
       alu_op_or  = 4'B0110 ,
-      alu_op_and = 4'B0111
+      alu_op_and = 4'B0111  
+
    } alu_op_type ;
+
+   typedef enum logic [2:0] {
+
+      mdu_op_mul     = 3'B000 ,
+      mdu_op_mulh    = 3'B001 ,
+      mdu_op_mulhsu  = 3'B010 ,
+      mdu_op_mulhu   = 3'B011 ,
+      mdu_op_div     = 3'B100 ,
+      mdu_op_divu    = 3'B101 ,
+      mdu_op_rem     = 3'B110 ,
+      mdu_op_remu    = 3'B111  
+
+   } mdu_op_type ;
 
 endpackage : rv32i_types

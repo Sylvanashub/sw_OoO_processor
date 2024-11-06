@@ -22,29 +22,30 @@ logic   [31:0] ufp_rdata ;
 logic   [31:0] ufp_wdata ;
 logic          ufp_resp  ;
 
-//logic          dequeue ;
-//logic [63:0]   dequeue_rdata ;
-//logic          is_empty ;
-
 icache u_icache ( .* ) ;
 
-//fetch u_fetch ( 
-//
-//   .* 
-//   //,.dequeue         ( '0 )
-//   //,.is_empty        ()
-//   //,.dequeue_rdata   ()
-//
-//) ;
-//
-//decode u_decode (
-//
-//   .*
-//
-//);
 assign ufp_wmask = '0 ;
 assign ufp_wdata = '0 ;
-pipeline u_pipeline (
+//pipeline u_pipeline (
+//
+//    .clk          ( clk )  //i logic          
+//   ,.rst          ( rst )  //i logic          
+//`ifdef USE_PIPELINE
+//   ,.imem_addr    ( ufp_addr  )  //o logic   [31:0] 
+//   ,.imem_rmask   ( ufp_rmask )  //o logic   [3:0]  
+//`endif
+//   ,.imem_rdata   ( ufp_rdata )  //i logic   [31:0] 
+//   ,.imem_resp    ( ufp_resp  )  //i logic          
+//   ,.dmem_addr    ()  //o logic   [31:0] 
+//   ,.dmem_rmask   ()  //o logic   [3:0]  
+//   ,.dmem_wmask   ()  //o logic   [3:0]  
+//   ,.dmem_rdata   ('0)  //i logic   [31:0] 
+//   ,.dmem_wdata   ()  //o logic   [31:0] 
+//   ,.dmem_resp    ('0)  //i logic          
+//
+//);
+
+ooo u_ooo (
 
     .clk          ( clk )  //i logic          
    ,.rst          ( rst )  //i logic          
@@ -57,7 +58,7 @@ pipeline u_pipeline (
    ,.dmem_wmask   ()  //o logic   [3:0]  
    ,.dmem_rdata   ('0)  //i logic   [31:0] 
    ,.dmem_wdata   ()  //o logic   [31:0] 
-   ,.dmem_resp    ('0)  //i logic          
+   ,.dmem_resp    ('0)  //i logic      
 
 );
 
