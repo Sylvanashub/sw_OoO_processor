@@ -77,12 +77,17 @@ begin
       alu2cdb_itf.tag  <= '0 ;
       //alu2cdb_itf.addr <= '0 ;
    end
-   else if( rvs2alu_itf.req && rvs2alu_itf.rdy )
+   //else if( alu2cdb_itf.rdy )
+   //begin
+   //   alu2cdb_itf.req  <= rvs2alu_itf.req && rvs2alu_itf.rdy ;
+   //   alu2cdb_itf.tag  <= rvs2alu_itf.tag ;
+   //end
+   else if( wr_vld )
    begin
       alu2cdb_itf.req  <= '1 ;
       alu2cdb_itf.tag  <= rvs2alu_itf.tag ;
    end
-   else
+   else if( rd_vld )
    begin
       alu2cdb_itf.req  <= '0 ;
       alu2cdb_itf.tag  <= '0 ;

@@ -39,16 +39,16 @@ assign dmem_wdata = '0 ;
 // interface instance
 //------------------------------------------------------------------------------
 
-dec2rvs_itf dec2alu_rvs_itf();
-dec2rvs_itf dec2mdu_rvs_itf();
-dec2rvs_itf dec2lsu_rvs_itf();
+dec2rvs_itf #(.TAG_W(TAG_W), .OPC_W(4)) dec2alu_rvs_itf();
+dec2rvs_itf #(.TAG_W(TAG_W), .OPC_W(3)) dec2mdu_rvs_itf();
+dec2rvs_itf #(.TAG_W(TAG_W), .OPC_W(4)) dec2lsu_rvs_itf();
 //dec2rvs_itf dec2stu_rvs_itf();
 
 dec2rfu_itf dec2rfu_itf();
 
 rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(4)) rvs2alu_itf() ;
 rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(3)) rvs2mdu_itf() ;
-rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(3)) rvs2lsu_itf() ;
+rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(4)) rvs2lsu_itf() ;
 //rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(3)) rvs2stu_itf() ;
 
 exu2cdb_itf alu2cdb_itf() ;

@@ -27,6 +27,10 @@ logic [2:0] state_nxt ;
 
 logic [32:0] a;
 logic [32:0] b;
+logic [32:0] a_r;
+logic [32:0] b_r;
+logic [32:0] div_a;
+logic [32:0] div_b;
 logic signed [63:0]  mul_res ;
 logic signed [63:0]  mul_res_r ;
 logic [2:0] opc_r ;
@@ -42,12 +46,14 @@ logic [32:0] div_remainder ;
 
 logic wr_vld ;
 
-assign wr_vld = rvs2mdu_itf_rdy && rvs2mdu_itf.req ;
+assign wr_vld = rvs2mdu_itf.rdy && rvs2mdu_itf.req ;
 
 assign is_div_opc = ~is_mul_opc ;
 
 assign div_start = wr_vld & is_div_opc ;
 
+assign div_a = state_r == DIV ? a_r : a ;
+assign div_b = state_r == DIV ? b_r : b ;
 
 DW_div_seq 
 #(
@@ -57,15 +63,15 @@ DW_div_seq
    ,.num_cyc     ( 3    )
    ,.rst_mode    ( 1    )
    ,.input_mode  ( 0    )
-   ,.output_mode ( 0    )
+   ,.output_mode ( 1    )
    ,.early_start ( 0    )
 ) u_div (
     .clk          (clk              )
    ,.rst_n        (~rst             )
    ,.hold         ( 1'H0            )
    ,.start        (div_start        )
-   ,.a            (a                )
-   ,.b            (b                )
+   ,.a            (div_a            )
+   ,.b            (div_b            )
    ,.complete     (div_complete     )
    ,.divide_by_0  (div_divide_by_0  )
    ,.quotient     (div_quotient     )
@@ -98,6 +104,19 @@ begin
 end
 
 assign mul_res = signed'(a) * signed'(b) ;
+always_ff@(posedge clk)
+begin
+   if( rst )
+   begin
+      a_r <= '0 ;
+      b_r <= '0 ;
+   end
+   else if( rvs2mdu_itf.req && rvs2mdu_itf.rdy )
+   begin
+      a_r <= a;
+      b_r <= b ;
+   end
+end
 
 always_ff@(posedge clk)
 begin

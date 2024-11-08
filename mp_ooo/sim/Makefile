@@ -19,6 +19,7 @@ EXCLUDE += ../hvl/vcs/sync_fifo_tb.sv
 EXCLUDE += ../hvl/vcs/cacheline_adapter_tb.sv
 
 #EXCLUDE += ../hdl/core/itf.sv
+#EXCLUDE += ../tmp/DW_div_seq.sv
 #EXCLUDE += ../hdl/core/ooo.sv
 #EXCLUDE += ../hdl/core/alu.sv
 #EXCLUDE += ../hdl/core/rvs.sv
@@ -40,7 +41,7 @@ VCS_HVL := $(filter-out $(EXCLUDE),$(VCS_HVL))
 VCS_SRCS:= $(filter-out $(EXCLUDE),$(VCS_SRCS))
 
 export VCS_ARCH_OVERRIDE=linux
-VCS_FLAGS= -full64 -lca -sverilog -timescale=1ps/1ps -debug_acc+all -kdb -fsdb -suppress=LCA_FEATURES_ENABLED -msg_config=../vcs_warn.config -xprop=../xprop.config -xprop=flowctrl +incdir+$(DW)/sim_ver +define+DW_SUPPRESS_WARN +incdir+$(PWD)/../hvl/vcs +incdir+$(PWD)/../hvl/common +incdir+$(PWD)/../hdl/core
+VCS_FLAGS= -full64 -lca -sverilog -timescale=1ps/1ps -debug_acc+all -kdb -fsdb -suppress=LCA_FEATURES_ENABLED -msg_config=../vcs_warn.config -xprop=../xprop.config -xprop=flowctrl +incdir+$(DW)/sim_ver +define+DW_SUPPRESS_WARN +incdir+$(PWD)/../hvl/vcs +incdir+$(PWD)/../hvl/common 
 ifdef f
 VCS_FLAGS= -full64 -lca -sverilog -timescale=1ps/1ps -debug_access+all -kdb -suppress=LCA_FEATURES_ENABLED -msg_config=../vcs_warn.config -xprop=../xprop.config -xprop=flowctrl +incdir+$(DW)/sim_ver +define+DW_SUPPRESS_WARN +incdir+$(PWD)/../hvl/vcs +incdir+$(PWD)/../hvl/common
 endif
@@ -78,7 +79,6 @@ run:
 	mkdir -p vcs
 	cd vcs && vcs $(VCS_SRCS) $(VCS_FLAGS) -l compile.log -top top_tb -o top_tb
 	rm -f vcs/dump.fsdb
-	python3 ../bin/generate_memory_file.py -32 ../testcode/ooo_test.s
 	python3 $(PWD)/../bin/get_options.py clock
 	python3 $(PWD)/../bin/get_options.py bmem_x
 	export ECE411_CLOCK_PERIOD_PS=$(shell python3 $(PWD)/../bin/get_options.py clock) ;\

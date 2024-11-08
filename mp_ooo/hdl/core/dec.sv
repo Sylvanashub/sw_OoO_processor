@@ -64,15 +64,8 @@ endfunction
 // Main
 //------------------------------------------------------------------------------
 
-localparam  IDLE  = 2'H0 ;
-localparam  WAIT  = 2'H1 ;
-localparam  READ  = 2'H2 ;
-
 logic rvs_rdy ;
-
-logic [1:0] state_r ;
-logic [1:0] state_nxt ;
-logic       rvs_req  ;
+logic rvs_req  ;
 
 //------------------------------------------------------------------------------
 // instruction decode
@@ -123,57 +116,20 @@ wire exu_end = (dec2alu_rvs_itf.req && dec2alu_rvs_itf.rdy) ||
 assign dec2rfu_itf.rd_wr = opcode == op_b_store ? 1'H0 : exu_end ;
 
 //------------------------------------------------------------------------------
-// RS interface
+// RVS interface
 //------------------------------------------------------------------------------
 
-assign rvs_rdy =  dec2alu_rvs_itf.req & dec2alu_rvs_itf.rdy ||
-                  dec2mdu_rvs_itf.req & dec2mdu_rvs_itf.rdy ||
-                  dec2lsu_rvs_itf.req & dec2lsu_rvs_itf.rdy ;
+assign rvs_rdy =  dec2alu_rvs_itf.req ? dec2alu_rvs_itf.rdy :
+                  dec2mdu_rvs_itf.req ? dec2mdu_rvs_itf.rdy :
+                  dec2lsu_rvs_itf.req ? dec2lsu_rvs_itf.rdy : 1'H1 ;
 
-always_ff@(posedge clk)
-begin
-   if( rst )
-      state_r <= IDLE ;
-   else
-      state_r <= state_nxt ;
-end
-
-always_comb
-begin
-   state_nxt = state_r ;
-   case( state_r )
-   IDLE :
-   begin
-      if(~is_empty )
-         state_nxt = READ ;
-   end
-   WAIT :
-   begin
-      if( rvs_rdy )
-         state_nxt = READ ;
-   end
-   READ :
-   begin
-      if( rvs_req )
-      begin
-         if( rvs_rdy )
-            state_nxt = dequeue ? READ : IDLE ;
-         else
-            state_nxt = WAIT ;
-      end
-   end
-   endcase
-end
-
-assign dequeue = ~is_empty && (state_r == IDLE || rvs_rdy ) ;
+assign dequeue = ~is_empty && rvs_rdy  ;
 
 always@(posedge clk)
 begin
    if( rst )
       rvs_req <= 1'H0 ;
-   else if( is_empty )
-      rvs_req <= 1'H0 ;
-   else
+   else if( rvs_rdy )
       rvs_req <= dequeue ;
 end
 
@@ -181,7 +137,6 @@ end
 always_comb
 begin
 
-//   dec2alu_rvs_itf.sel        = '0 ;
    dec2alu_rvs_itf.req        = '0 ;
    dec2alu_rvs_itf.opc        = '0 ;
    dec2alu_rvs_itf.src1_vld   = '0 ;
@@ -190,8 +145,8 @@ begin
    dec2alu_rvs_itf.src2_vld   = '0 ;
    dec2alu_rvs_itf.src2_tag   = '0 ;
    dec2alu_rvs_itf.src2_wdata = '0 ;
+   dec2alu_rvs_itf.offset     = '0 ;
 
-//   dec2mdu_rvs_itf.sel        = '0 ;
    dec2mdu_rvs_itf.req        = '0 ;
    dec2mdu_rvs_itf.opc        = '0 ;
    dec2mdu_rvs_itf.src1_vld   = '0 ;
@@ -200,8 +155,8 @@ begin
    dec2mdu_rvs_itf.src2_vld   = '0 ;
    dec2mdu_rvs_itf.src2_tag   = '0 ;
    dec2mdu_rvs_itf.src2_wdata = '0 ;
+   dec2mdu_rvs_itf.offset     = '0 ;
 
-//   dec2lsu_rvs_itf.sel        = '0 ;
    dec2lsu_rvs_itf.req        = '0 ;
    dec2lsu_rvs_itf.opc        = '0 ;
    dec2lsu_rvs_itf.src1_vld   = '0 ;
@@ -210,22 +165,12 @@ begin
    dec2lsu_rvs_itf.src2_vld   = '0 ;
    dec2lsu_rvs_itf.src2_tag   = '0 ;
    dec2lsu_rvs_itf.src2_wdata = '0 ;
-
-   //dec2stu_rvs_itf.sel        = '0 ;
-   //dec2stu_rvs_itf.req        = '0 ;
-   //dec2stu_rvs_itf.opc        = '0 ;
-   //dec2stu_rvs_itf.src1_vld   = '0 ;
-   //dec2stu_rvs_itf.src1_tag   = '0 ;
-   //dec2stu_rvs_itf.src1_wdata = '0 ;
-   //dec2stu_rvs_itf.src2_vld   = '0 ;
-   //dec2stu_rvs_itf.src2_tag   = '0 ;
-   //dec2stu_rvs_itf.src2_wdata = '0 ;
+   dec2lsu_rvs_itf.offset     = '0 ;
 
    unique case(opcode )
    op_b_lui :
    begin
 
-//      dec2alu_rvs_itf.sel        = '1           ;
       dec2alu_rvs_itf.req        = rvs_req      ;
       dec2alu_rvs_itf.opc        = alu_op_add   ;
       dec2alu_rvs_itf.src1_vld   = '1           ;
@@ -239,7 +184,6 @@ begin
    op_b_auipc :
    begin
 
-//      dec2alu_rvs_itf.sel        = '1           ;
       dec2alu_rvs_itf.req        = rvs_req      ;
       dec2alu_rvs_itf.opc        = alu_op_add   ;
       dec2alu_rvs_itf.src1_vld   = '1           ;
@@ -253,35 +197,34 @@ begin
    op_b_load :
    begin
    
-//      dec2lsu_rvs_itf.sel        = '1                    ;
       dec2lsu_rvs_itf.req        = rvs_req               ;
-      dec2lsu_rvs_itf.opc        = funct3                ;
+      dec2lsu_rvs_itf.opc        = {1'H0,funct3}         ;
       dec2lsu_rvs_itf.src1_vld   = ~dec2rfu_itf.rs1_busy ;
       dec2lsu_rvs_itf.src1_tag   = dec2rfu_itf.rs1_tag   ;
       dec2lsu_rvs_itf.src1_wdata = dec2rfu_itf.rs1_rdata ;
-      dec2lsu_rvs_itf.src2_vld   = '1                    ;
+      dec2lsu_rvs_itf.src2_vld   = '0                    ;
       dec2lsu_rvs_itf.src2_tag   = '0                    ;
-      dec2lsu_rvs_itf.src2_wdata = i_imm                 ;
+      dec2lsu_rvs_itf.src2_wdata = '0                    ;
+      dec2lsu_rvs_itf.offset     = i_imm                 ;
 
    end
    op_b_store :
    begin
    
-//      dec2lsu_rvs_itf.sel        = '1                    ;
       dec2lsu_rvs_itf.req        = rvs_req               ;
-      dec2lsu_rvs_itf.opc        = funct3                ;
+      dec2lsu_rvs_itf.opc        = {1'H1,funct3}         ;
       dec2lsu_rvs_itf.src1_vld   = ~dec2rfu_itf.rs1_busy ;
       dec2lsu_rvs_itf.src1_tag   = dec2rfu_itf.rs1_tag   ;
       dec2lsu_rvs_itf.src1_wdata = dec2rfu_itf.rs1_rdata ;
-      dec2lsu_rvs_itf.src2_vld   = '1                    ;
-      dec2lsu_rvs_itf.src2_tag   = '0                    ;
-      dec2lsu_rvs_itf.src2_wdata = s_imm                 ;
+      dec2lsu_rvs_itf.src2_vld   = ~dec2rfu_itf.rs2_busy ;
+      dec2lsu_rvs_itf.src2_tag   = dec2rfu_itf.rs2_tag   ;
+      dec2lsu_rvs_itf.src2_wdata = dec2rfu_itf.rs2_rdata ;
+      dec2lsu_rvs_itf.offset     = s_imm                 ;
 
    end
    op_b_imm :
    begin
 
-//      dec2alu_rvs_itf.sel        = '1                    ;
       dec2alu_rvs_itf.req        = rvs_req               ;
       //dec2alu_rvs_itf.opc        =  ;
       dec2alu_rvs_itf.src1_vld   = ~dec2rfu_itf.rs1_busy ;
@@ -312,7 +255,6 @@ begin
 
       if( funct7 == 7'H01 )
       begin
-//         dec2mdu_rvs_itf.sel        = '1                    ;
          dec2mdu_rvs_itf.req        = rvs_req               ;
          dec2mdu_rvs_itf.opc        = funct3                ;
          dec2mdu_rvs_itf.src1_vld   = ~dec2rfu_itf.rs1_busy ;
@@ -324,7 +266,6 @@ begin
       end
       else
       begin
-//         dec2alu_rvs_itf.sel        = '1                    ;
          dec2alu_rvs_itf.req        = rvs_req               ;
          dec2alu_rvs_itf.opc        = get_op_reg_aluop(funct3,funct7) ;
          dec2alu_rvs_itf.src1_vld   = ~dec2rfu_itf.rs1_busy ;
@@ -339,7 +280,6 @@ begin
    default :
    begin
 
-//      dec2alu_rvs_itf.sel        = '0 ;
       dec2alu_rvs_itf.req        = '0 ;
       dec2alu_rvs_itf.opc        = '0 ;
       dec2alu_rvs_itf.src1_vld   = '0 ;
@@ -349,7 +289,6 @@ begin
       dec2alu_rvs_itf.src2_tag   = '0 ;
       dec2alu_rvs_itf.src2_wdata = '0 ;
 
-//      dec2mdu_rvs_itf.sel        = '0 ;
       dec2mdu_rvs_itf.req        = '0 ;
       dec2mdu_rvs_itf.opc        = '0 ;
       dec2mdu_rvs_itf.src1_vld   = '0 ;
@@ -359,7 +298,6 @@ begin
       dec2mdu_rvs_itf.src2_tag   = '0 ;
       dec2mdu_rvs_itf.src2_wdata = '0 ;
 
-//      dec2lsu_rvs_itf.sel        = '0 ;
       dec2lsu_rvs_itf.req        = '0 ;
       dec2lsu_rvs_itf.opc        = '0 ;
       dec2lsu_rvs_itf.src1_vld   = '0 ;
@@ -368,16 +306,7 @@ begin
       dec2lsu_rvs_itf.src2_vld   = '0 ;
       dec2lsu_rvs_itf.src2_tag   = '0 ;
       dec2lsu_rvs_itf.src2_wdata = '0 ;
-
-      //dec2stu_rvs_itf.sel        = '0 ;
-      //dec2stu_rvs_itf.req        = '0 ;
-      //dec2stu_rvs_itf.opc        = '0 ;
-      //dec2stu_rvs_itf.src1_vld   = '0 ;
-      //dec2stu_rvs_itf.src1_tag   = '0 ;
-      //dec2stu_rvs_itf.src1_wdata = '0 ;
-      //dec2stu_rvs_itf.src2_vld   = '0 ;
-      //dec2stu_rvs_itf.src2_tag   = '0 ;
-      //dec2stu_rvs_itf.src2_wdata = '0 ;
+      dec2lsu_rvs_itf.offset     = '0 ;
 
    end
    endcase

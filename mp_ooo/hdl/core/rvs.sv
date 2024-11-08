@@ -7,7 +7,8 @@ module rvs
    parameter   OPC_W    = 32'D4 ,
    parameter   START_ID = 32'D1 ,
    parameter   END_ID   = START_ID + DEPTH - 1 ,
-   parameter   PTR_W    = $clog2(DEPTH)
+   parameter   PTR_W    = $clog2(DEPTH),
+   parameter   IS_LSU   = 32'H0
 
 ) (
 
@@ -32,6 +33,11 @@ logic [TAG_W-1:0] tag2 [DEPTH];
 logic [31:0]      src1 [DEPTH];
 logic [31:0]      src2 [DEPTH];
 
+//generate
+//if( IS_LSU == 1 ) begin : GEN_OFFSET_DEF
+logic [11:0]      offset [DEPTH] ;
+//end
+//endgenerate
 logic [PTR_W:0]   wptr  ;
 logic [PTR_W:0]   rptr  ;
 logic             is_full  ;
@@ -59,7 +65,7 @@ begin : item
          src2[i]  <= '0 ;
          opc[i]   <= '0 ;
       end
-      else if( rvs_wr_en && wptr[PTR_W-1:0] == i[PTR_W-1:0] )
+      else 
       begin
 
          if( cdb_itf.wr && cdb_itf.tag == tag1[i] )
@@ -68,7 +74,7 @@ begin : item
             tag1[i]  <= '0 ;
             src1[i]  <= cdb_itf.wdata ;
          end
-         else
+         else if( rvs_wr_en && wptr[PTR_W-1:0] == i[PTR_W-1:0] )
          begin
             vld1[i]  <= dec2rvs_itf.src1_vld ;
             tag1[i]  <= dec2rvs_itf.src1_tag ;
@@ -81,14 +87,20 @@ begin : item
             tag2[i]  <= '0 ;
             src2[i]  <= cdb_itf.wdata ;
          end
-         else
+         else if( rvs_wr_en && wptr[PTR_W-1:0] == i[PTR_W-1:0] )
          begin
             vld2[i]  <= dec2rvs_itf.src2_vld ;
             tag2[i]  <= dec2rvs_itf.src2_tag ;
             src2[i]  <= dec2rvs_itf.src2_wdata ;
          end
 
-         opc[i]   <= dec2rvs_itf.opc ;
+         if( rvs_wr_en && wptr[PTR_W-1:0] == i[PTR_W-1:0] )
+         begin
+            opc[i]   <= dec2rvs_itf.opc ;
+            //if( IS_LSU == 1 ) begin : GEN_OFFSET
+            offset[i]  <= dec2rvs_itf.offset ;
+            //end
+         end
       end
    end
 end
@@ -123,20 +135,21 @@ assign is_empty = extra_eq && catch_up ;
 
 assign dec2rvs_itf.rdy = ~is_full && rvs2exu_itf.rdy ;
 
-logic exu_req ;
-always_ff@(posedge clk)
-begin
-   if( rst )
-      exu_req <= '0 ;
-   else if( rvs2exu_itf.rdy )
-      exu_req <= dec2rvs_itf.req ;
-end
+//logic exu_req ;
+//always_ff@(posedge clk)
+//begin
+//   if( rst )
+//      exu_req <= '0 ;
+//   else if( rvs2exu_itf.rdy )
+//      exu_req <= dec2rvs_itf.req ;
+//end
 
-assign rvs2exu_itf.req = ~is_empty && rvi_valid && exu_req ;
+assign rvs2exu_itf.req = ~is_empty && rvi_valid ;//&& exu_req ;
 assign rvs2exu_itf.tag = rptr[PTR_W-1:0] + START_ID[TAG_W-1:0] ;
 assign rvs2exu_itf.opc = opc[rptr[PTR_W-1:0]] ;
 assign rvs2exu_itf.src1= src1[rptr[PTR_W-1:0]] ;
 assign rvs2exu_itf.src2= src2[rptr[PTR_W-1:0]] ;
+assign rvs2exu_itf.offset= offset[rptr[PTR_W-1:0]] ;
 
 endmodule
 

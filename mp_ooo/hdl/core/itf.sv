@@ -60,7 +60,7 @@ endinterface
 interface dec2rvs_itf #(
    
    parameter   TAG_W = 32'D4 ,
-   parameter   OPC_W = 32'D4 
+   parameter   OPC_W = 32'D4  
 
 ) () ;
 
@@ -68,7 +68,6 @@ interface dec2rvs_itf #(
    logic             rdy         ;
    logic [TAG_W-1:0] tag         ;
    logic [OPC_W-1:0] opc         ;
-//   logic             sel         ;
 
    logic             src1_vld    ;
    logic             src2_vld    ;
@@ -76,10 +75,10 @@ interface dec2rvs_itf #(
    logic [TAG_W-1:0] src2_tag    ;
    logic [31:0]      src1_wdata  ;
    logic [31:0]      src2_wdata  ;
+   logic [11:0]      offset  ;
 
    modport dec (
 
- //      output  sel       
        output  req       
       ,output  opc       
       ,input   tag       
@@ -90,12 +89,11 @@ interface dec2rvs_itf #(
       ,output  src2_tag  
       ,output  src1_wdata
       ,output  src2_wdata
-
+      ,output  offset
    );
 
    modport rvs (
 
- //      input   sel       
        input   req       
       ,input   opc       
       ,output  tag       
@@ -106,6 +104,7 @@ interface dec2rvs_itf #(
       ,input   src2_tag  
       ,input   src1_wdata
       ,input   src2_wdata
+      ,input   offset
 
    );
 
@@ -124,6 +123,7 @@ interface rvs2exu_itf #(
    logic [OPC_W-1:0] opc   ;
    logic [31:0]      src1  ;
    logic [31:0]      src2  ;
+   logic [11:0]      offset;
    
    modport rvs (
        output  req   
@@ -132,6 +132,7 @@ interface rvs2exu_itf #(
       ,output  opc   
       ,output  src1  
       ,output  src2  
+      ,output  offset
    );
 
    modport exu (
@@ -141,6 +142,7 @@ interface rvs2exu_itf #(
       ,input   opc   
       ,input   src1  
       ,input   src2  
+      ,input   offset
    );
 
 endinterface

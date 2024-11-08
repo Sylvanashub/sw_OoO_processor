@@ -16,9 +16,20 @@ module cdb
 
 );
 
-assign alu2cdb_itf.rdy = alu2cdb_itf.req ;
-assign mdu2cdb_itf.rdy = mdu2cdb_itf.req && ~alu2cdb_itf.req ;
-assign lsu2cdb_itf.rdy = lsu2cdb_itf.req && ~mdu2cdb_itf.req && ~alu2cdb_itf.req ;
+//assign alu2cdb_itf.rdy = alu2cdb_itf.req ;
+//assign mdu2cdb_itf.rdy = mdu2cdb_itf.req && ~alu2cdb_itf.req ;
+//assign lsu2cdb_itf.rdy = lsu2cdb_itf.req && ~mdu2cdb_itf.req && ~alu2cdb_itf.req ;
+
+
+//// priority alu > mdu > lsu
+//assign alu2cdb_itf.rdy = 1'H1 ; 
+//assign mdu2cdb_itf.rdy = ~alu2cdb_itf.req ;
+//assign lsu2cdb_itf.rdy = ~( mdu2cdb_itf.req | alu2cdb_itf.req ) ;
+
+// priority mdu > lsu > alu
+assign mdu2cdb_itf.rdy = 1'H1 ; 
+assign lsu2cdb_itf.rdy = ~mdu2cdb_itf.req ;
+assign alu2cdb_itf.rdy = ~( mdu2cdb_itf.req | lsu2cdb_itf.req ) ;
 
 always_ff@(posedge clk)
 begin
