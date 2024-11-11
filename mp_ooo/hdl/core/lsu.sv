@@ -1,11 +1,12 @@
 
 module lsu 
 import rv32i_types::*;
-#(
-
-   parameter   TAG_W    = 32'D4  
-
-) (
+//#(
+//
+//   parameter   TAG_W    = 32'D4  
+//
+//) 
+(
 
     input   logic    clk
    ,input   logic    rst
@@ -13,6 +14,13 @@ import rv32i_types::*;
    ,rvs2exu_itf.exu  rvs2lsu_itf
 
    ,exu2cdb_itf.exu  lsu2cdb_itf
+
+   ,output  logic [31:0]   dmem_addr
+   ,output  logic [3:0]    dmem_rmask
+   ,output  logic [3:0]    dmem_wmask
+//   ,input   logic [31:0]   dmem_rdata
+   ,output  logic [31:0]   dmem_wdata
+//   ,input   logic          dmem_resp 
 
 );
 
@@ -64,7 +72,12 @@ end
 
 assign rvs2lsu_itf.rdy = state_r == IDLE ;
 assign lsu2cdb_itf.req = '0 ;
-assign lsu2cdb_itf.tag = '0 ;
+assign lsu2cdb_itf.tag = rvs2lsu_itf.tag ;
 assign lsu2cdb_itf.wdata = '0 ;
+
+assign dmem_addr = rvs2lsu_itf.src1 + {{20{rvs2lsu_itf.offset[11]}},rvs2lsu_itf.offset} ;
+assign dmem_wdata = rvs2lsu_itf.src2 ;
+assign dmem_rmask = rvs2lsu_itf.opc ;
+assign dmem_wmask = rvs2lsu_itf.opc ;
 
 endmodule

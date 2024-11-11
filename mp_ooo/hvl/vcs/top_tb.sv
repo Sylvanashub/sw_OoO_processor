@@ -15,8 +15,14 @@ module top_tb;
 
     int timeout = 10000000; // in cycles, change according to your needs
 
+
     mem_itf_banked bmem_itf(.*);
+
+   `ifdef RND_TEST
+    random_tb random_tb(.itf(bmem_itf)); // For randomized testing
+    `else
     banked_memory banked_memory(.itf(bmem_itf));
+    `endif
 
     mon_itf #(.CHANNELS(8)) mon_itf(.*);
     monitor #(.CHANNELS(8)) monitor(.itf(mon_itf));
@@ -57,7 +63,7 @@ module top_tb;
             $finish;
         end
         if (mon_itf.error != 0) begin
-            repeat (5) @(posedge clk);
+            repeat (15) @(posedge clk);
             $finish;
         end
         if (bmem_itf.error != 0) begin

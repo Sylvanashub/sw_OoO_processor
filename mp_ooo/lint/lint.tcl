@@ -12,6 +12,8 @@ set_option enable_save_restore no
 set_option mthresh 2000000000
 set_option sgsyn_loop_limit 2000000000
 
+read_file -type sgdc  ./cpu.sgdc
+
 current_goal Design_Read -top $env(DESIGN_TOP)
 
 current_goal lint/lint_turbo_rtl -top $env(DESIGN_TOP)

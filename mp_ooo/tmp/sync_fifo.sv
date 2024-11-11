@@ -27,8 +27,8 @@ logic [DATA_WIDTH-1:0] queue [QUEUE_DEPTH] ;
 logic [PTR_WIDTH-1:0] wptr_r ;
 logic [PTR_WIDTH-1:0] rptr_r ;
 
-//logic [PTR_WIDTH-1:0] wptr_nxt ;
-//logic [PTR_WIDTH-1:0] rptr_nxt ;
+logic [PTR_WIDTH-1:0] wptr_nxt ;
+logic [PTR_WIDTH-1:0] rptr_nxt ;
 
 //------------------------------------------------------------------------------
 // Write pointer

@@ -8,3 +8,5 @@ waive -rule {{W287b}}            -comment {output of a instance not connected}
 waive -rule {{W415a}}            -comment {multiple assignment in always_comb}
 waive -rule {{ErrorAnalyzeBBox}} -comment {Design Unit '%s' has no definition; black-box behavior assumed and module interface inferred}
 waive -rule {{SYNTH_5166}}       -comment {Non-synthesizable statement ignored}
+
+waive -rule {{Av_init01}}

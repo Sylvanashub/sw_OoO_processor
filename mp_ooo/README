@@ -1,0 +1,18 @@
+to run cacheline_adapter sim :
+	make ss SUB=cache
+
+to run fifo sim :
+	make ss 
+
+to run ooo_test sim
+	make vcs/top_tb 
+	make run_vcs_top_tb PROG=../testcode/ooo_test.s
+
+to run random inst sim and generate coverage report
+	make vcs/top_tb rand=1
+	make run_vcs_top_tb PROG=../testcode/ooo_test.s rand=1
+	make covrep
+
+to run verilator lint
+	cd verilator
+	make

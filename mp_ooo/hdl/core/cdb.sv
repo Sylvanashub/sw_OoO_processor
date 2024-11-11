@@ -1,9 +1,10 @@
 module cdb
-#(
-
-   parameter   TAG_W    = 32'D4  
-
-) (
+//#(
+//
+//   parameter   TAG_W    = 32'D4  
+//
+//)
+(
 
     input   logic       clk
    ,input   logic       rst

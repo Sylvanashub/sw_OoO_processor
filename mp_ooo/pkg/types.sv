@@ -50,6 +50,7 @@ package rv32i_types;
     // instructions that have the funct7 field.
     typedef enum logic [6:0] {
         base           = 7'b0000000,
+        muldiv          = 7'b0000001,
         variant        = 7'b0100000
     } funct7_t;
 
@@ -135,5 +136,18 @@ package rv32i_types;
       mdu_op_remu    = 3'B111  
 
    } mdu_op_type ;
+
+    typedef enum logic [3:0] {
+
+        lsu_op_lb    = 4'b0000,
+        lsu_op_lh    = 4'b0001,
+        lsu_op_lw    = 4'b0010,
+        lsu_op_lbu   = 4'b0100,
+        lsu_op_lhu   = 4'b0101,
+        lsu_op_sb    = 4'b1000,
+        lsu_op_sh    = 4'b1001,
+        lsu_op_sw    = 4'b1010
+
+    } lsu_op_type ;
 
 endpackage : rv32i_types

@@ -18,6 +18,7 @@ interface dec2rfu_itf #(
    logic [4:0]          rd_addr  ;
    logic                rd_wr    ;
    logic [TAG_W-1:0]    rd_tag   ;
+   //logic                rd_busy  ;
 
    modport dec (
 
@@ -34,6 +35,7 @@ interface dec2rfu_itf #(
       ,output  rd_addr
       ,output  rd_wr
       ,output  rd_tag
+      //,input   rd_busy
 
    );
 
@@ -52,7 +54,7 @@ interface dec2rfu_itf #(
       ,input   rd_addr
       ,input   rd_wr
       ,input   rd_tag
-
+     // ,output  rd_busy
    );
 
 endinterface
@@ -250,6 +252,28 @@ interface dec2rob_itf #(
    );
 
 endinterface
+
+interface rvs2rob_itf #(
+
+   parameter   TAG_W = 32'D4 
+
+) () ;
+
+   logic [TAG_W-1:0] tag   ;
+   logic             busy ;
+
+   modport rvs  (
+       output  tag 
+      ,input   busy 
+   );
+
+   modport rob  (
+       input   tag
+      ,output  busy 
+   );
+
+endinterface
+
 
 interface rob2mon_itf () ;
 

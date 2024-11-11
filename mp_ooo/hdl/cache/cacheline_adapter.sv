@@ -42,7 +42,11 @@ logic write_valid ;
 
 assign read_valid  = dfp_read && bmem_ready ;
 assign write_valid = dfp_write && bmem_ready ;
+
+// verilator lint_off UNUSEDSIGNAL
 wire _x = |bmem_raddr ;
+// verilator lint_on UNUSEDSIGNAL
+
 always_ff@(posedge clk)
 begin
    if( rst )
@@ -79,13 +83,15 @@ begin
       R0 : bmem_rdata_r[64*1-1:64*0] <= bmem_rdata ;
       R1 : bmem_rdata_r[64*2-1:64*1] <= bmem_rdata ;
       R2 : bmem_rdata_r[64*3-1:64*2] <= bmem_rdata ;
+      default : bmem_rdata_r <= bmem_rdata_r ;
       endcase
 end
 
 assign dfp_rdata = {bmem_rdata,bmem_rdata_r} ;
 assign dfp_resp  = bmem_ready && ((state_r == R3) || (state_r == W3)) ;
 
-assign bmem_addr  = {dfp_addr[31:5],5'H00} ;
+//assign bmem_addr  = {dfp_addr[31:5],5'H00} ;
+assign bmem_addr  = dfp_addr & 32'HFFFF_FFE0 ;
 assign bmem_read  = ( state_r == IDLE ) && dfp_read ;
 assign bmem_write = ( state_r == IDLE ) && dfp_write || (state_r == W1) || (state_r == W2) || (state_r == W3) ;
 

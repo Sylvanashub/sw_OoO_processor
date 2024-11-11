@@ -17,34 +17,58 @@ logic [31:0]      busy     ;
 logic [TAG_W-1:0] tag [32] ;
 logic [31:0]      mem [32]  ;
 
-assign busy[0] = '0 ;
-assign tag[0]  = '0 ;
-assign mem[0]  = '0 ;
+//assign busy[0] = '0 ;
+//assign tag[0]  = '0 ;
+//assign mem[0]  = '0 ;
+
+//logic [31:1] rx_tag_match  ;
+//
+//assign dec2rfu_itf.rd_busy = (|dec2rfu_itf.rd_tag) && (|rx_tag_match) ;
 
 genvar i ;
 generate
-for(i=1;i<32;i++)
+for(i=0;i<32;i++)
 begin : rf
-   always@(posedge clk)
-   begin
-      if( rst )
+
+   if( i == 0 )
+   begin : reg0
+      always@(posedge clk)
       begin
-         mem[i]    <= '0 ;
-         busy[i]  <= '0 ;
-         tag[i]   <= '0 ;
-      end
-      else if( dec2rfu_itf.rd_wr && dec2rfu_itf.rd_addr == i[4:0] )
-      begin
-         busy[i] <= '1 ;
-         tag[i]  <= dec2rfu_itf.rd_tag ;
-      end
-      else if( cdb_itf.wr && cdb_itf.tag == tag[i] )
-      begin
-         mem[i]   <= cdb_itf.wdata ;
-         busy[i]  <= '0 ;
-         tag[i]   <= '0 ;
+         if( rst )
+         begin
+            mem[i]    <= '0 ;
+            busy[i]  <= '0 ;
+            tag[i]   <= '0 ;
+         end
       end
    end
+   else
+   begin : reg1_31
+
+      always@(posedge clk)
+      begin
+         if( rst )
+         begin
+            mem[i]    <= '0 ;
+            busy[i]  <= '0 ;
+            tag[i]   <= '0 ;
+         end
+         else if( dec2rfu_itf.rd_wr && dec2rfu_itf.rd_addr == i[4:0] )
+         begin
+            busy[i] <= '1 ;
+            tag[i]  <= dec2rfu_itf.rd_tag ;
+         end
+         else if( cdb_itf.wr && cdb_itf.tag == tag[i] )
+         begin
+            mem[i]   <= cdb_itf.wdata ;
+            busy[i]  <= '0 ;
+            tag[i]   <= '0 ;
+         end
+      end
+
+   end
+
+   //assign rx_tag_match[i] = tag[i] == dec2rfu_itf.rd_tag ;
 
 end
 endgenerate

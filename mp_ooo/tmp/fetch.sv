@@ -68,7 +68,6 @@ begin
    IDLE : state_nxt = READ ;
    READ : if( ufp_resp ) state_nxt = is_full ? WAIT : READ ;
    WAIT : if( ~is_full ) state_nxt = READ ;
-   default : state_nxt = state_r ;
    endcase
 end
 

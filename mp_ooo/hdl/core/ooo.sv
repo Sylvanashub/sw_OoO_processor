@@ -3,10 +3,13 @@ module ooo #(
    parameter   RVS_ALU_DEPTH  = 32'D4 ,
    parameter   RVS_MDU_DEPTH  = 32'D4 ,
    parameter   RVS_LDU_DEPTH  = 32'D4 ,
-   parameter   RVS_STU_DEPTH  = 32'D4 ,
 
    parameter   RVS_NUM = RVS_ALU_DEPTH + RVS_MDU_DEPTH + RVS_LDU_DEPTH ,
-   parameter   TAG_W = $clog2(RVS_NUM)
+   parameter   TAG_W = $clog2(RVS_NUM),
+
+   parameter   ALU_START_ID   = 1,
+   parameter   MDU_START_ID   = ALU_START_ID + RVS_ALU_DEPTH ,
+   parameter   LSU_START_ID   = MDU_START_ID + RVS_MDU_DEPTH 
 
 ) (
 
@@ -21,9 +24,9 @@ module ooo #(
    ,output  logic [31:0]   dmem_addr
    ,output  logic [3:0]    dmem_rmask
    ,output  logic [3:0]    dmem_wmask
-   ,input   logic [31:0]   dmem_rdata
+//   ,input   logic [31:0]   dmem_rdata
    ,output  logic [31:0]   dmem_wdata
-   ,input   logic          dmem_resp   
+//   ,input   logic          dmem_resp   
 
 );
 
@@ -31,10 +34,10 @@ logic          dequeue        ;
 logic [63:0]   dequeue_rdata  ;
 logic          is_empty       ;
 
-assign dmem_addr  = '0 ;
-assign dmem_rmask = '0 ;
-assign dmem_wmask = '0 ;
-assign dmem_wdata = '0 ;
+//assign dmem_addr  = '0 ;
+//assign dmem_rmask = '0 ;
+//assign dmem_wmask = '0 ;
+//assign dmem_wdata = '0 ;
 //------------------------------------------------------------------------------
 // interface instance
 //------------------------------------------------------------------------------
@@ -60,6 +63,10 @@ cdb_itf     cdb_itf();
 
 dec2rob_itf dec2rob_itf() ;
 rob2mon_itf rob2mon_itf();
+
+rvs2rob_itf #(.TAG_W( TAG_W ) ) alu_rvs2rob_itf() ;
+rvs2rob_itf #(.TAG_W( TAG_W ) ) mdu_rvs2rob_itf() ;
+rvs2rob_itf #(.TAG_W( TAG_W ) ) lsu_rvs2rob_itf() ;
 
 //------------------------------------------------------------------------------
 // pipeline instance
@@ -94,49 +101,49 @@ rfu  #(
 
 rvs #(
     .TAG_W     ( TAG_W           )
+   ,.OPC_W     ( 4               )
    ,.DEPTH     ( RVS_ALU_DEPTH   )
-   ,.START_ID  ( 1               )
+   ,.START_ID  ( ALU_START_ID    )
 ) u_alu_rvs (
    .*
    ,.dec2rvs_itf ( dec2alu_rvs_itf  )
    ,.rvs2exu_itf ( rvs2alu_itf      )
+   ,.rvs2rob_itf ( alu_rvs2rob_itf  )
 );
 
 rvs #(
     .TAG_W     ( TAG_W           )
-   ,.DEPTH     ( RVS_MDU_DEPTH )
-   ,.START_ID  ( 5               )
+   ,.OPC_W     ( 3               )
+   ,.DEPTH     ( RVS_MDU_DEPTH   )
+   ,.START_ID  ( MDU_START_ID    )
 ) u_mdu_rvs (
    .*
    ,.dec2rvs_itf ( dec2mdu_rvs_itf  )
    ,.rvs2exu_itf ( rvs2mdu_itf      )
+   ,.rvs2rob_itf ( mdu_rvs2rob_itf  )
 );
 
 rvs #(
     .TAG_W     ( TAG_W           )
+   ,.OPC_W     ( 4               )
    ,.DEPTH     ( RVS_LDU_DEPTH   )
-   ,.START_ID  ( 9               )
+   ,.START_ID  ( LSU_START_ID    )
 ) u_ldu_rvs (
    .*
    ,.dec2rvs_itf ( dec2lsu_rvs_itf  )
    ,.rvs2exu_itf ( rvs2lsu_itf      )
+   ,.rvs2rob_itf ( lsu_rvs2rob_itf  )
 );
 
-alu #(
-    .TAG_W     ( TAG_W           )
-) u_alu (
+alu u_alu (
    .*
 );
 
-mdu #(
-    .TAG_W     ( TAG_W           )
-) u_mdu (
+mdu u_mdu (
    .*
 );
 
-lsu #(
-    .TAG_W     ( TAG_W           )
-) u_lsu (
+lsu u_lsu (
    .*
 );
 
@@ -144,9 +151,7 @@ lsu #(
 //   .*
 //);
 
-cdb #(
-    .TAG_W     ( TAG_W           )
-) u_cdb (
+cdb  u_cdb (
    .*
 );
 

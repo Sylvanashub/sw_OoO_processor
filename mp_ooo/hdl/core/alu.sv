@@ -1,11 +1,12 @@
 
 module alu 
 import rv32i_types::*;
-#(
-
-   parameter   TAG_W    = 32'D4  
-
-) (
+//#(
+//
+//   parameter   TAG_W    = 32'D4  
+//
+//) 
+(
 
     input   logic    clk
    ,input   logic    rst
@@ -96,6 +97,10 @@ end
 
 assign alu2cdb_itf.wdata = aluout_r ;
 assign rvs2alu_itf.rdy = ~is_full || rd_vld ; 
+
+// verilator lint_off UNUSEDSIGNAL
+wire x = |rvs2alu_itf.offset ;
+// verilator lint_on UNUSEDSIGNAL
 
 endmodule
 

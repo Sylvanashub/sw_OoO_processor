@@ -56,9 +56,9 @@ ooo u_ooo (
    ,.dmem_addr    ()  //o logic   [31:0] 
    ,.dmem_rmask   ()  //o logic   [3:0]  
    ,.dmem_wmask   ()  //o logic   [3:0]  
-   ,.dmem_rdata   ('0)  //i logic   [31:0] 
+//   ,.dmem_rdata   ('0)  //i logic   [31:0] 
    ,.dmem_wdata   ()  //o logic   [31:0] 
-   ,.dmem_resp    ('0)  //i logic      
+//   ,.dmem_resp    ('0)  //i logic      
 
 );
 

@@ -14,6 +14,10 @@ import rv32i_types::* ;
 
    ,dec2rob_itf.rob  dec2rob_itf
 
+   ,rvs2rob_itf.rob  alu_rvs2rob_itf
+   ,rvs2rob_itf.rob  mdu_rvs2rob_itf
+   ,rvs2rob_itf.rob  lsu_rvs2rob_itf
+   
    ,cdb_itf.slv      cdb_itf
 
    ,rob2mon_itf      rob2mon_itf
@@ -39,6 +43,9 @@ logic [PTR_W-1:0] wptr ;
 logic [PTR_W-1:0] rptr ;
 
 rob_entry_t rob_entries [DEPTH] ;
+logic [DEPTH-1:0] alu_tag_match ;
+logic [DEPTH-1:0] mdu_tag_match ;
+logic [DEPTH-1:0] lsu_tag_match ;
 
 genvar i ;
 generate 
@@ -49,8 +56,6 @@ begin : entry
       if( rst )
       begin
          rob_entries[i].tag      <= '0 ;
-         rob_entries[i].rs1_tag  <= '0 ;
-         rob_entries[i].rs2_tag  <= '0 ;
          rob_entries[i].valid    <= '0 ;
          rob_entries[i].ready    <= '0 ;
       end
@@ -59,11 +64,6 @@ begin : entry
          rob_entries[i].inst     <= dec2rob_itf.inst     ;
          rob_entries[i].pc       <= dec2rob_itf.pc       ;
          rob_entries[i].tag      <= dec2rob_itf.tag      ;
-         rob_entries[i].rs1_tag  <= dec2rob_itf.rs1_tag  ;
-         rob_entries[i].rs2_tag  <= dec2rob_itf.rs2_tag  ;
-         rob_entries[i].rs1_rdata<= dec2rob_itf.rs1_rdata;
-         rob_entries[i].rs2_rdata<= dec2rob_itf.rs2_rdata;
-
          rob_entries[i].valid <= '1 ;
       end
       else if( rob_entries[i].valid && cdb_itf.wr && cdb_itf.tag == rob_entries[i].tag )
@@ -72,24 +72,61 @@ begin : entry
          rob_entries[i].wdata <= cdb_itf.wdata ;
          rob_entries[i].ready <= '1 ;
       end
-      else if( rob_entries[i].valid && cdb_itf.wr && cdb_itf.tag == rob_entries[i].rs1_tag )
-      begin
-         rob_entries[i].rs1_tag   <= '0            ;
-         rob_entries[i].rs1_rdata <= cdb_itf.wdata ;
-      end
-      else if( rob_entries[i].valid && cdb_itf.wr && cdb_itf.tag == rob_entries[i].rs2_tag )
-      begin
-         rob_entries[i].rs2_tag   <= '0            ;
-         rob_entries[i].rs2_rdata <= cdb_itf.wdata ;
-      end
       else if( rob_entries[i].valid && rob_entries[i].ready && rptr == i[PTR_W-1:0] )
       begin
          rob_entries[i].valid <= '0 ;
          rob_entries[i].ready <= '0 ;
       end
    end
+
+   always@(posedge clk)
+   begin
+      if( rst )
+      begin
+         rob_entries[i].rs1_tag  <= '0 ;
+         rob_entries[i].rs1_rdata <= '0 ;
+      end
+      else if( dec2rob_itf.issue && wptr == i[PTR_W-1:0] )
+      begin
+         rob_entries[i].rs1_tag  <= dec2rob_itf.rs1_tag  ;
+         rob_entries[i].rs1_rdata<= dec2rob_itf.rs1_rdata;
+      end
+      else if( rob_entries[i].valid && cdb_itf.wr && cdb_itf.tag == rob_entries[i].rs1_tag )
+      begin
+         rob_entries[i].rs1_tag   <= '0            ;
+         rob_entries[i].rs1_rdata <= cdb_itf.wdata ;
+      end
+   end
+
+   always@(posedge clk)
+   begin
+      if( rst )
+      begin
+         rob_entries[i].rs2_tag  <= '0 ;
+         rob_entries[i].rs2_rdata <= '0 ;
+      end
+      else if( dec2rob_itf.issue && wptr == i[PTR_W-1:0] )
+      begin
+         rob_entries[i].rs2_tag  <= dec2rob_itf.rs2_tag  ;
+         rob_entries[i].rs2_rdata<= dec2rob_itf.rs2_rdata;
+      end
+      else if( rob_entries[i].valid && cdb_itf.wr && cdb_itf.tag == rob_entries[i].rs2_tag )
+      begin
+         rob_entries[i].rs2_tag   <= '0            ;
+         rob_entries[i].rs2_rdata <= cdb_itf.wdata ;
+      end
+   end
+
+   assign alu_tag_match[i] = rob_entries[i].valid && (rob_entries[i].tag == alu_rvs2rob_itf.tag ) ;
+   assign mdu_tag_match[i] = rob_entries[i].valid && (rob_entries[i].tag == mdu_rvs2rob_itf.tag ) ;
+   assign lsu_tag_match[i] = rob_entries[i].valid && (rob_entries[i].tag == lsu_rvs2rob_itf.tag ) ;
+
 end
 endgenerate
+
+assign alu_rvs2rob_itf.busy = |alu_tag_match ;
+assign mdu_rvs2rob_itf.busy = |mdu_tag_match ;
+assign lsu_rvs2rob_itf.busy = |lsu_tag_match ;
 
 always_ff@(posedge clk)
 begin
@@ -149,5 +186,8 @@ assign rob2mon_itf.mem_rmask  = '0 ;
 assign rob2mon_itf.mem_wmask  = '0 ;
 assign rob2mon_itf.mem_rdata  = '0 ;
 assign rob2mon_itf.mem_wdata  = '0 ;
+
+
+
 
 endmodule
