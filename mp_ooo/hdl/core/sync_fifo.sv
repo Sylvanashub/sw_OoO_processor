@@ -2,7 +2,8 @@
 module sync_fifo #(
 
    parameter   DATA_WIDTH  = 32'D64 ,
-   parameter   QUEUE_DEPTH = 32'D16
+   parameter   QUEUE_DEPTH = 32'D16 ,
+   parameter   PTR_WIDTH = $clog2(QUEUE_DEPTH) + 1 
 
 )(
 
@@ -18,14 +19,20 @@ module sync_fifo #(
    ,output  logic                   is_full
    ,output  logic                   is_empty
 
+   ,output  logic  [PTR_WIDTH-1:0]  count
 );
 
 //Add extra bit for is_full/is_empty
-localparam  PTR_WIDTH = $clog2(QUEUE_DEPTH) + 1 ;
 
 logic [DATA_WIDTH-1:0] queue [QUEUE_DEPTH] ;
 logic [PTR_WIDTH-1:0] wptr_r ;
 logic [PTR_WIDTH-1:0] rptr_r ;
+
+logic wr_valid ;
+logic rd_valid ;
+
+assign wr_valid = enqueue && ~is_full ;
+assign rd_valid = dequeue && ~is_empty ;
 
 //logic [PTR_WIDTH-1:0] wptr_nxt ;
 //logic [PTR_WIDTH-1:0] rptr_nxt ;
@@ -53,6 +60,17 @@ begin
    else if( dequeue && ~is_empty )
       rptr_r <= rptr_r + {{(PTR_WIDTH-1){1'H0}},1'H1} ;
 end
+
+always_ff@(posedge clk)
+begin
+   if( rst )
+      count <= '0 ;
+   else if( wr_valid && ~rd_valid )
+      count <= count + {{(PTR_WIDTH-1){1'H0}},1'H1} ;
+   else if( ~wr_valid && rd_valid )
+      count <= count - {{(PTR_WIDTH-1){1'H0}},1'H1} ;
+end
+
 
 always_ff@(posedge clk)
 begin

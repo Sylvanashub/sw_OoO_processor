@@ -3,7 +3,7 @@ module alu
 import rv32i_types::*;
 //#(
 //
-//   parameter   TAG_W    = 32'D4  
+////   parameter   TAG_W    = 32'D4  
 //
 //) 
 (
@@ -21,8 +21,10 @@ logic is_full  ;
 logic wr_vld   ;
 logic rd_vld   ;
 
+//logic [ROB_PTR_W-1:0]   inst_id_r ;
+
 logic [31:0]   aluout ;
-logic [31:0]   aluout_r ;
+//logic [31:0]   aluout_r ;
 logic signed   [31:0] as;
 logic signed   [31:0] bs;
 logic unsigned [31:0] au;
@@ -49,13 +51,19 @@ always_comb begin
     endcase
 end
 
-always_ff @(posedge clk) 
-begin
-   if (rst) 
-      aluout_r <= '0 ;
-   else if( rvs2alu_itf.req && rvs2alu_itf.rdy )
-      aluout_r <= aluout ;
-end
+//always_ff @(posedge clk) 
+//begin
+//   if (rst) 
+//   begin
+//      aluout_r    <= '0 ;
+//      inst_id_r   <= '0 ;
+//   end
+//   else if( rvs2alu_itf.req && rvs2alu_itf.rdy )
+//   begin
+//      aluout_r    <= aluout ;
+//      inst_id_r   <= rvs2alu_itf.inst_id ;
+//   end
+//end
 
 assign wr_vld = rvs2alu_itf.req && rvs2alu_itf.rdy ;
 assign rd_vld = alu2cdb_itf.req && alu2cdb_itf.rdy ;
@@ -74,8 +82,10 @@ always_ff@(posedge clk)
 begin
    if( rst )
    begin
-      alu2cdb_itf.req  <= '0 ;
-      alu2cdb_itf.tag  <= '0 ;
+      alu2cdb_itf.req      <= '0 ;
+      alu2cdb_itf.tag      <= '0 ;
+      alu2cdb_itf.wdata    <= '0 ;
+      alu2cdb_itf.inst_id  <= '0 ;
       //alu2cdb_itf.addr <= '0 ;
    end
    //else if( alu2cdb_itf.rdy )
@@ -85,8 +95,10 @@ begin
    //end
    else if( wr_vld )
    begin
-      alu2cdb_itf.req  <= '1 ;
-      alu2cdb_itf.tag  <= rvs2alu_itf.tag ;
+      alu2cdb_itf.req      <= '1 ;
+      alu2cdb_itf.tag      <= rvs2alu_itf.tag ;
+      alu2cdb_itf.wdata    <= aluout ;
+      alu2cdb_itf.inst_id  <= rvs2alu_itf.inst_id ;
    end
    else if( rd_vld )
    begin
@@ -95,12 +107,12 @@ begin
    end
 end
 
-assign alu2cdb_itf.wdata = aluout_r ;
+//assign alu2cdb_itf.wdata   = aluout_r ;
+//assign alu2cdb_itf.inst_id = inst_id_r ;
+
 assign rvs2alu_itf.rdy = ~is_full || rd_vld ; 
 
-// verilator lint_off UNUSEDSIGNAL
 wire x = |rvs2alu_itf.offset ;
-// verilator lint_on UNUSEDSIGNAL
 
 endmodule
 

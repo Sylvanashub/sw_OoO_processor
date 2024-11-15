@@ -20,16 +20,19 @@ li x12, 4
 li x14, 3
 li x15, 1
 
-nop
-nop
-nop
-nop
-nop
-nop
-
 # this should take many cycles
 # if this writes back to the ROB after the following instructions, you get credit for CP2
-mul x3, x1, x2
+li x8, 0x1234ABCD
+li x9, 0x00010000
+sw x8, -20(x9)
+sw x8, -24(x9)
+sb x8, -21(x9)
+sh x8, -22(x9)
+lw x7, -20(x9)
+lb x7, -21(x9)
+lbu x7, -21(x9)
+lh x7, -22(x9)
+lhu x7, -22(x9)
 
 # these instructions should  resolve before the multiply
 add x4, x5, x6

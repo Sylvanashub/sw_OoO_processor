@@ -1,8 +1,0 @@
-`verilator_config
-
-lint_off -file "../hdl/core/itf.sv"
-lint_off -file "../hdl/core/lsu.sv"
-lint_off -file "DW_div_seq.sv"
-lint_off -file "DW_mult_seq.v"
-lint_off -file "mp_cache_data_array.sv"
-lint_off -file "mp_cache_tag_array.sv"

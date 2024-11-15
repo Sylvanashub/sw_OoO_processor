@@ -61,8 +61,10 @@ endinterface
 
 interface dec2rvs_itf #(
    
-   parameter   TAG_W = 32'D4 ,
-   parameter   OPC_W = 32'D4  
+    parameter  TAG_W       = 32'D4
+   ,parameter  OPC_W       = 32'D4  
+   ,parameter  ROB_DEPTH   = 32'D16
+   ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
 
 ) () ;
 
@@ -78,6 +80,7 @@ interface dec2rvs_itf #(
    logic [31:0]      src1_wdata  ;
    logic [31:0]      src2_wdata  ;
    logic [11:0]      offset  ;
+   logic [ROB_PTR_W-1:0]   inst_id     ;
 
    modport dec (
 
@@ -92,6 +95,7 @@ interface dec2rvs_itf #(
       ,output  src1_wdata
       ,output  src2_wdata
       ,output  offset
+      ,output  inst_id
    );
 
    modport rvs (
@@ -107,6 +111,7 @@ interface dec2rvs_itf #(
       ,input   src1_wdata
       ,input   src2_wdata
       ,input   offset
+      ,input   inst_id
 
    );
 
@@ -114,18 +119,21 @@ endinterface
 
 interface rvs2exu_itf #(
 
-   parameter   TAG_W = 32'D4 ,
-   parameter   OPC_W = 32'D4 
+    parameter  TAG_W       = 32'D4 
+   ,parameter  OPC_W       = 32'D4 
+   ,parameter  ROB_DEPTH   = 32'D16
+   ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
 
 ) (  );
 
-   logic             req   ;
-   logic             rdy   ;
-   logic [TAG_W-1:0] tag   ;
-   logic [OPC_W-1:0] opc   ;
-   logic [31:0]      src1  ;
-   logic [31:0]      src2  ;
-   logic [11:0]      offset;
+   logic                   req      ;
+   logic                   rdy      ;
+   logic [TAG_W-1:0]       tag      ;
+   logic [OPC_W-1:0]       opc      ;
+   logic [31:0]            src1     ;
+   logic [31:0]            src2     ;
+   logic [11:0]            offset   ;
+   logic [ROB_PTR_W-1:0]   inst_id  ;
    
    modport rvs (
        output  req   
@@ -135,6 +143,7 @@ interface rvs2exu_itf #(
       ,output  src1  
       ,output  src2  
       ,output  offset
+      ,output  inst_id
    );
 
    modport exu (
@@ -145,20 +154,24 @@ interface rvs2exu_itf #(
       ,input   src1  
       ,input   src2  
       ,input   offset
+      ,input   inst_id
    );
 
 endinterface
 
 interface exu2cdb_itf #(
 
-   parameter   TAG_W = 32'D4 
+    parameter  TAG_W       = 32'D4 
+   ,parameter  ROB_DEPTH   = 32'D16
+   ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
 
 ) () ;
 
-   logic                req   ;
-   logic                rdy   ;
-   logic [TAG_W-1:0]    tag   ;
-   logic [31:0]         wdata ;
+   logic                   req      ;
+   logic                   rdy      ;
+   logic [TAG_W-1:0]       tag      ;
+   logic [31:0]            wdata    ;
+   logic [ROB_PTR_W-1:0]   inst_id  ;
 
    modport exu (
 
@@ -166,6 +179,7 @@ interface exu2cdb_itf #(
       ,input   rdy   
       ,output  tag   
       ,output  wdata 
+      ,output  inst_id
 
    );
 
@@ -175,6 +189,7 @@ interface exu2cdb_itf #(
       ,output  rdy   
       ,input   tag   
       ,input   wdata 
+      ,input   inst_id
 
    );
 
@@ -182,14 +197,17 @@ endinterface
 
 interface cdb_itf #(
 
-   parameter   TAG_W = 32'D4 
+    parameter  TAG_W       = 32'D4 
+   ,parameter  ROB_DEPTH   = 32'D16
+   ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
 
 ) () ;
 
-   logic                wr    ;
+   logic                   wr       ;
 //   logic [4:0]          addr  ;
-   logic [TAG_W-1:0]    tag   ;
-   logic [31:0]         wdata ;
+   logic [TAG_W-1:0]       tag      ;
+   logic [31:0]            wdata    ;
+   logic [ROB_PTR_W-1:0]   inst_id  ;
 
    modport mst  (
 
@@ -197,6 +215,7 @@ interface cdb_itf #(
 //      ,output  addr 
       ,output  tag  
       ,output  wdata
+      ,output  inst_id
 
    );
 
@@ -206,6 +225,7 @@ interface cdb_itf #(
 //      ,input   addr 
       ,input   tag  
       ,input   wdata
+      ,input   inst_id
 
    );
 
@@ -213,19 +233,23 @@ endinterface
 
 interface dec2rob_itf #(
 
-   parameter   TAG_W = 32'D4 
+    parameter  TAG_W       = 32'D4 
+   ,parameter  ROB_DEPTH   = 32'D16
+   ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
 
 ) () ;
 
-   logic             issue ;
-   logic [31:0]      inst  ;
-   logic [31:0]      pc    ;
-   logic [TAG_W-1:0] tag   ;
+   logic                   issue       ;
+   logic [31:0]            inst        ;
+   logic [31:0]            pc          ;
+   logic [TAG_W-1:0]       tag         ;
 
-   logic [TAG_W-1:0] rs1_tag   ;
-   logic [TAG_W-1:0] rs2_tag   ;
-   logic [31:0]      rs1_rdata ;
-   logic [31:0]      rs2_rdata ;
+   logic [TAG_W-1:0]       rs1_tag     ;
+   logic [TAG_W-1:0]       rs2_tag     ;
+   logic [31:0]            rs1_rdata   ;
+   logic [31:0]            rs2_rdata   ;
+
+   logic [ROB_PTR_W-1:0]   inst_id     ;
 
    modport dec  (
        output  issue
@@ -237,6 +261,8 @@ interface dec2rob_itf #(
       ,output  rs2_tag   
       ,output  rs1_rdata 
       ,output  rs2_rdata 
+
+      ,input   inst_id
    );
 
    modport rob  (
@@ -249,27 +275,51 @@ interface dec2rob_itf #(
       ,input   rs2_tag   
       ,input   rs1_rdata 
       ,input   rs2_rdata 
+
+      ,output  inst_id
    );
 
 endinterface
 
-interface rvs2rob_itf #(
+interface rvs2rob_itf 
+//#(
+//
+//   parameter   TAG_W = 32'D4 
+//
+//)
+() ;
 
-   parameter   TAG_W = 32'D4 
-
-) () ;
-
-   logic [TAG_W-1:0] tag   ;
+//   logic [TAG_W-1:0] tag   ;
    logic             busy ;
 
    modport rvs  (
-       output  tag 
-      ,input   busy 
+//       output  tag 
+      input   busy 
    );
 
    modport rob  (
-       input   tag
-      ,output  busy 
+//       input   tag
+      output  busy 
+   );
+
+endinterface
+
+interface rob2lsu_itf 
+#(
+
+   parameter   ROB_PTR_W = 32'H4
+
+)
+() ;
+
+   logic [ROB_PTR_W-1:0] inst_id   ;
+
+   modport lsu  (
+      input   inst_id
+   );
+
+   modport rob  (
+      output  inst_id
    );
 
 endinterface

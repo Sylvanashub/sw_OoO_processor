@@ -1,4 +1,4 @@
-import "DPI-C" function string getenv(input string env_name);
+//import "DPI-C" function string getenv(input string env_name);
 
 module top_tb;
 
@@ -20,6 +20,7 @@ module top_tb;
 
    `ifdef RND_TEST
     random_tb random_tb(.itf(bmem_itf)); // For randomized testing
+    rob_mon  rob_tom ( .* , .rob2mon_itf( dut.u_ooo.rob2mon_itf ) ) ;
     `else
     banked_memory banked_memory(.itf(bmem_itf));
     `endif
@@ -63,7 +64,7 @@ module top_tb;
             $finish;
         end
         if (mon_itf.error != 0) begin
-            repeat (15) @(posedge clk);
+            repeat (5) @(posedge clk);
             $finish;
         end
         if (bmem_itf.error != 0) begin

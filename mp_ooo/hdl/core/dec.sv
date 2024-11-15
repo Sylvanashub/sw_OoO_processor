@@ -206,7 +206,7 @@ begin
       dec2lsu_rvs_itf.src1_vld   = ~dec2rfu_itf.rs1_busy ;
       dec2lsu_rvs_itf.src1_tag   = dec2rfu_itf.rs1_tag   ;
       dec2lsu_rvs_itf.src1_wdata = dec2rfu_itf.rs1_rdata ;
-      dec2lsu_rvs_itf.src2_vld   = '0                    ;
+      dec2lsu_rvs_itf.src2_vld   = '1                    ;
       dec2lsu_rvs_itf.src2_tag   = '0                    ;
       dec2lsu_rvs_itf.src2_wdata = '0                    ;
       dec2lsu_rvs_itf.offset     = i_imm[11:0]                 ;
@@ -339,6 +339,10 @@ begin
    end
    endcase
 end
+
+assign dec2alu_rvs_itf.inst_id = dec2rob_itf.inst_id ;
+assign dec2mdu_rvs_itf.inst_id = dec2rob_itf.inst_id ;
+assign dec2lsu_rvs_itf.inst_id = dec2rob_itf.inst_id ;
 
 assign dec2rob_itf.issue      = rvs_req && rvs_rdy    ;
 assign dec2rob_itf.inst       = inst                  ;

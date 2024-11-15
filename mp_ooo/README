@@ -1,18 +1,21 @@
-to run cacheline_adapter sim :
+cacheline_adapter sim :
 	make ss SUB=cache
-
-to run fifo sim :
+fifo sim :
 	make ss 
-
-to run ooo_test sim
+ooo_test sim
+	make clean
 	make vcs/top_tb 
 	make run_vcs_top_tb PROG=../testcode/ooo_test.s
-
-to run random inst sim and generate coverage report
+random inst sim and generate coverage report
+	make clean
 	make vcs/top_tb rand=1
-	make run_vcs_top_tb PROG=../testcode/ooo_test.s rand=1
+	make run_vcs_top_tb PROG=../testcode/ooo_test.s
 	make covrep
 
-to run verilator lint
-	cd verilator
-	make
+we monitor the committed instruction for coverage of ALU operation 
+including arith and mul/div
+
+alu_instr_cg/operand_is_32b : operation with 32 bit operands , e.g. ADD/SUB/XOR
+alu_instr_cg/operand_is_5b  : operation with 32 bit operands , e.g. SLL/SRA/SRL
+alu_instr_cg/mul_div	    : mul/div operation
+

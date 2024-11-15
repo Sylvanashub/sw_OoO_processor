@@ -26,8 +26,6 @@ module monitor #(
     logic [CHANNELS*32-1:0] rvfi_mem_wdata;
     logic [CHANNELS*1 -1:0] rvfi_mem_extamo;
 
-    logic [15:0] errcode;
-
     assign rvfi_trap = '0;
     assign rvfi_intr = '0;
     assign rvfi_mode = '0;
@@ -52,100 +50,6 @@ module monitor #(
         assign rvfi_mem_wdata[channel*32 +: 32] =   itf.mem_wdata[channel];
     end endgenerate
 
-    always @(posedge itf.clk iff !itf.rst) begin
-        for (int unsigned channel = 0; channel < CHANNELS; channel++) begin
-            if ($isunknown(itf.valid[channel])) begin
-                $error("RVFI Interface Error: valid is 1'bx");
-                itf.error <= 1'b1;
-            end
-        end
-    end
-
-    generate for (genvar channel = 0; channel < CHANNELS; channel++) begin : x_detection
-        always @(posedge itf.clk iff (!itf.rst && itf.valid[channel])) begin
-            if ($isunknown(itf.order[channel])) begin
-                $error("RVFI Interface Error: order contains 'x");
-                itf.error <= 1'b1;
-            end
-            if ($isunknown(itf.inst[channel])) begin
-                $error("RVFI Interface Error: inst contains 'x");
-                itf.error <= 1'b1;
-            end
-            if ($isunknown(itf.rs1_addr[channel])) begin
-                $error("RVFI Interface Error: rs1_addr contains 'x");
-                itf.error <= 1'b1;
-            end
-            if ($isunknown(itf.rs2_addr[channel])) begin
-                $error("RVFI Interface Error: rs2_addr contains 'x");
-                itf.error <= 1'b1;
-            end
-            if (itf.rs1_addr[channel] != '0) begin
-                if ($isunknown(itf.rs1_rdata[channel])) begin
-                    $error("RVFI Interface Error: rs1_rdata contains 'x");
-                    itf.error <= 1'b1;
-                end
-            end
-            if (itf.rs2_addr[channel] != '0) begin
-                if ($isunknown(itf.rs2_rdata[channel])) begin
-                    $error("RVFI Interface Error: rs2_rdata contains 'x");
-                    itf.error <= 1'b1;
-                end
-            end
-            if ($isunknown(itf.rd_addr[channel])) begin
-                $error("RVFI Interface Error: rd_addr contains 'x");
-                itf.error <= 1'b1;
-            end
-            if (|itf.rd_addr[channel]) begin
-                if ($isunknown(itf.rd_wdata[channel])) begin
-                    $error("RVFI Interface Error: rd_wdata contains 'x");
-                    itf.error <= 1'b1;
-                end
-            end
-            if ($isunknown(itf.pc_rdata[channel])) begin
-                $error("RVFI Interface Error: pc_rdata contains 'x");
-                itf.error <= 1'b1;
-            end
-            if ($isunknown(itf.pc_wdata[channel])) begin
-                $error("RVFI Interface Error: pc_wdata contains 'x");
-                itf.error <= 1'b1;
-            end
-            if ($isunknown(itf.mem_rmask[channel])) begin
-                $error("RVFI Interface Error: mem_rmask contains 'x");
-                itf.error <= 1'b1;
-            end
-            if ($isunknown(itf.mem_wmask[channel])) begin
-                $error("RVFI Interface Error: mem_wmask contains 'x");
-                itf.error <= 1'b1;
-            end
-            if (|itf.mem_rmask[channel] || |itf.mem_wmask[channel]) begin
-                if ($isunknown(itf.mem_addr[channel])) begin
-                    $error("RVFI Interface Error: mem_addr contains 'x");
-                    itf.error <= 1'b1;
-                end
-            end
-            if (|itf.mem_rmask[channel]) begin
-                for (int i = 0; i < 4; i++) begin
-                    if (itf.mem_rmask[channel][i]) begin
-                        if ($isunknown(itf.mem_rdata[channel][i*8 +: 8])) begin
-                            $error("RVFI Interface Error: mem_rdata contains 'x");
-                            itf.error <= 1'b1;
-                        end
-                    end
-                end
-            end
-            if (|itf.mem_wmask[channel]) begin
-                for (int i = 0; i < 4; i++) begin
-                    if (itf.mem_wmask[channel][i]) begin
-                        if ($isunknown(itf.mem_wdata[channel][i*8 +: 8])) begin
-                            $error("RVFI Interface Error: mem_wdata contains 'x");
-                            itf.error <= 1'b1;
-                        end
-                    end
-                end
-            end
-        end
-    end endgenerate
-
     initial begin
         for (int unsigned channel = 0; channel < CHANNELS; channel++) begin
             itf.halt[channel] = '0;
@@ -161,13 +65,6 @@ module monitor #(
             if (itf.valid[channel] && is_halt(itf.inst[channel])) begin
                 itf.halt[channel] <= 1'b1;
             end
-        end
-    end
-
-    always @(posedge itf.clk) begin
-        if (errcode != 0) begin
-            $error("RVFI Monitor Error");
-            itf.error <= 1'b1;
         end
     end
 
@@ -238,99 +135,221 @@ module monitor #(
         $fclose(time_fd);
     end
 
-    riscv_formal_monitor_rv32imc monitor(
-        .clock              (itf.clk),
-        .reset              (itf.rst),
-        .rvfi_valid         (rvfi_valid),
-        .rvfi_order         (rvfi_order),
-        .rvfi_insn          (rvfi_insn),
-        .rvfi_trap          (rvfi_trap),
-        .rvfi_halt          (rvfi_halt),
-        .rvfi_intr          (rvfi_intr),
-        .rvfi_mode          (rvfi_mode),
-        .rvfi_rs1_addr      (rvfi_rs1_addr),
-        .rvfi_rs2_addr      (rvfi_rs2_addr),
-        .rvfi_rs1_rdata     (rvfi_rs1_rdata),
-        .rvfi_rs2_rdata     (rvfi_rs2_rdata),
-        .rvfi_rd_addr       (rvfi_rd_addr),
-        .rvfi_rd_wdata      (rvfi_rd_wdata),
-        .rvfi_pc_rdata      (rvfi_pc_rdata),
-        .rvfi_pc_wdata      (rvfi_pc_wdata),
-        .rvfi_mem_addr      (rvfi_mem_addr),
-        .rvfi_mem_rmask     (rvfi_mem_rmask),
-        .rvfi_mem_wmask     (rvfi_mem_wmask),
-        .rvfi_mem_rdata     (rvfi_mem_rdata),
-        .rvfi_mem_wdata     (rvfi_mem_wdata),
-        .rvfi_mem_extamo    (rvfi_mem_extamo),
-        .errcode            (errcode)
-    );
+    `ifndef ECE411_NO_SPIKE
 
-    int spike_fd;
-    initial spike_fd = $fopen("../spike/commit.log", "w");
-    final $fclose(spike_fd);
+        int spike_fd;
+        initial spike_fd = $fopen("../spike/commit.log", "w");
+        final $fclose(spike_fd);
 
-    always @ (posedge itf.clk iff !itf.rst) begin
-        for (int unsigned channel = 0; channel < CHANNELS; channel++) begin
-            if(itf.valid[channel]) begin
-                if (itf.order[channel] % 1000 == 0) begin
-                    $display("dut commit No.%d, rd_s: x%02d, rd: 0x%h", itf.order[channel], itf.rd_addr[channel], |itf.rd_addr[channel] ? itf.rd_wdata[channel] : 32'd0);
-                end
-                if (itf.inst[channel][1:0] == 2'b11) begin
-                    $fwrite(spike_fd, "core   0: 3 0x%h (0x%h)", itf.pc_rdata[channel], itf.inst[channel]);
-                end else begin
-                    $fwrite(spike_fd, "core   0: 3 0x%h (0x%h)", itf.pc_rdata[channel], itf.inst[channel][15:0]);
-                end
-                if (itf.rd_addr[channel] != 0) begin
-                    if (itf.rd_addr[channel] < 10)
-                        $fwrite(spike_fd, " x%0d  ", itf.rd_addr[channel]);
-                    else
-                        $fwrite(spike_fd, " x%0d ", itf.rd_addr[channel]);
-                    $fwrite(spike_fd, "0x%h", itf.rd_wdata[channel]);
-                end
-                if (itf.mem_rmask[channel] != 0) begin
-                    automatic int first_1 = 0;
-                    for(int i = 0; i < 4; i++) begin
-                        if(itf.mem_rmask[channel][i]) begin
-                            first_1 = i;
-                            break;
-                        end
+        always @ (posedge itf.clk iff !itf.rst) begin
+            for (int unsigned channel = 0; channel < CHANNELS; channel++) begin
+                if(itf.valid[channel]) begin
+                    if (itf.order[channel] % 1000 == 0) begin
+                        $display("dut commit No.%d, rd_s: x%02d, rd: 0x%h", itf.order[channel], itf.rd_addr[channel], |itf.rd_addr[channel] ? itf.rd_wdata[channel] : 32'd0);
                     end
-                    $fwrite(spike_fd, " mem 0x%h", {itf.mem_addr[channel][31:2], 2'b0} + first_1);
-                end
-                if (itf.mem_wmask[channel] != 0) begin
-                    automatic int amount_o_1 = 0;
-                    automatic int first_1 = 0;
-                    for(int i = 0; i < 4; i++) begin
-                        if(itf.mem_wmask[channel][i]) begin
-                            amount_o_1 += 1;
-                        end
+                    if (itf.inst[channel][1:0] == 2'b11) begin
+                        $fwrite(spike_fd, "core   0: 3 0x%h (0x%h)", itf.pc_rdata[channel], itf.inst[channel]);
+                    end else begin
+                        $fwrite(spike_fd, "core   0: 3 0x%h (0x%h)", itf.pc_rdata[channel], itf.inst[channel][15:0]);
                     end
-                    for(int i = 0; i < 4; i++) begin
-                        if(itf.mem_wmask[channel][i]) begin
-                            first_1 = i;
-                            break;
-                        end
+                    if (itf.rd_addr[channel] != 0) begin
+                        if (itf.rd_addr[channel] < 10)
+                            $fwrite(spike_fd, " x%0d  ", itf.rd_addr[channel]);
+                        else
+                            $fwrite(spike_fd, " x%0d ", itf.rd_addr[channel]);
+                        $fwrite(spike_fd, "0x%h", itf.rd_wdata[channel]);
                     end
-                    $fwrite(spike_fd, " mem 0x%h", {itf.mem_addr[channel][31:2], 2'b0} + first_1);
-                    case (amount_o_1)
-                        1: begin
-                            automatic logic[7:0] wdata_byte = itf.mem_wdata[channel][8*first_1 +: 8];
-                            $fwrite(spike_fd, " 0x%h", wdata_byte);
+                    if (itf.frd_addr[channel] != 0) begin
+                        if (itf.frd_addr[channel] < 10)
+                            $fwrite(spike_fd, " f%0d  ", itf.frd_addr[channel]);
+                        else
+                            $fwrite(spike_fd, " f%0d ", itf.frd_addr[channel]);
+                        $fwrite(spike_fd, "0x%h", itf.frd_wdata[channel]);
+                    end
+                    if (itf.mem_rmask[channel] != 0) begin
+                        automatic int first_1 = 0;
+                        for(int i = 0; i < 4; i++) begin
+                            if(itf.mem_rmask[channel][i]) begin
+                                first_1 = i;
+                                break;
+                            end
                         end
-                        2: begin
-                            automatic logic[15:0] wdata_half = itf.mem_wdata[channel][8*first_1 +: 16];
-                            $fwrite(spike_fd, " 0x%h", wdata_half);
+                        $fwrite(spike_fd, " mem 0x%h", {itf.mem_addr[channel][31:2], 2'b0} + first_1);
+                    end
+                    if (itf.mem_wmask[channel] != 0) begin
+                        automatic int amount_o_1 = 0;
+                        automatic int first_1 = 0;
+                        for(int i = 0; i < 4; i++) begin
+                            if(itf.mem_wmask[channel][i]) begin
+                                amount_o_1 += 1;
+                            end
                         end
-                        4:
-                            $fwrite(spike_fd, " 0x%h", itf.mem_wdata[channel]);
-                    endcase
-                end
-                $fwrite(spike_fd, "\n");
-                if (is_halt(itf.inst[channel])) begin
-                    break;
+                        for(int i = 0; i < 4; i++) begin
+                            if(itf.mem_wmask[channel][i]) begin
+                                first_1 = i;
+                                break;
+                            end
+                        end
+                        $fwrite(spike_fd, " mem 0x%h", {itf.mem_addr[channel][31:2], 2'b0} + first_1);
+                        case (amount_o_1)
+                            1: begin
+                                automatic logic[7:0] wdata_byte = itf.mem_wdata[channel][8*first_1 +: 8];
+                                $fwrite(spike_fd, " 0x%h", wdata_byte);
+                            end
+                            2: begin
+                                automatic logic[15:0] wdata_half = itf.mem_wdata[channel][8*first_1 +: 16];
+                                $fwrite(spike_fd, " 0x%h", wdata_half);
+                            end
+                            4:
+                                $fwrite(spike_fd, " 0x%h", itf.mem_wdata[channel]);
+                        endcase
+                    end
+                    $fwrite(spike_fd, "\n");
+                    if (is_halt(itf.inst[channel])) begin
+                        break;
+                    end
                 end
             end
         end
-    end
+
+    `endif
+
+    `ifndef ECE411_NO_X_CHECK
+
+        always @(posedge itf.clk iff !itf.rst) begin
+            for (int unsigned channel = 0; channel < CHANNELS; channel++) begin
+                if ($isunknown(itf.valid[channel])) begin
+                    $error("RVFI Interface Error: valid is 1'bx");
+                    itf.error <= 1'b1;
+                end
+            end
+        end
+
+        generate for (genvar channel = 0; channel < CHANNELS; channel++) begin : x_detection
+            always @(posedge itf.clk iff (!itf.rst && itf.valid[channel])) begin
+                if ($isunknown(itf.order[channel])) begin
+                    $error("RVFI Interface Error: order contains 'x");
+                    itf.error <= 1'b1;
+                end
+                if ($isunknown(itf.inst[channel])) begin
+                    $error("RVFI Interface Error: inst contains 'x");
+                    itf.error <= 1'b1;
+                end
+                if ($isunknown(itf.rs1_addr[channel])) begin
+                    $error("RVFI Interface Error: rs1_addr contains 'x");
+                    itf.error <= 1'b1;
+                end
+                if ($isunknown(itf.rs2_addr[channel])) begin
+                    $error("RVFI Interface Error: rs2_addr contains 'x");
+                    itf.error <= 1'b1;
+                end
+                if (itf.rs1_addr[channel] != '0) begin
+                    if ($isunknown(itf.rs1_rdata[channel])) begin
+                        $error("RVFI Interface Error: rs1_rdata contains 'x");
+                        itf.error <= 1'b1;
+                    end
+                end
+                if (itf.rs2_addr[channel] != '0) begin
+                    if ($isunknown(itf.rs2_rdata[channel])) begin
+                        $error("RVFI Interface Error: rs2_rdata contains 'x");
+                        itf.error <= 1'b1;
+                    end
+                end
+                if ($isunknown(itf.rd_addr[channel])) begin
+                    $error("RVFI Interface Error: rd_addr contains 'x");
+                    itf.error <= 1'b1;
+                end
+                if (|itf.rd_addr[channel]) begin
+                    if ($isunknown(itf.rd_wdata[channel])) begin
+                        $error("RVFI Interface Error: rd_wdata contains 'x");
+                        itf.error <= 1'b1;
+                    end
+                end
+                if ($isunknown(itf.pc_rdata[channel])) begin
+                    $error("RVFI Interface Error: pc_rdata contains 'x");
+                    itf.error <= 1'b1;
+                end
+                if ($isunknown(itf.pc_wdata[channel])) begin
+                    $error("RVFI Interface Error: pc_wdata contains 'x");
+                    itf.error <= 1'b1;
+                end
+                if ($isunknown(itf.mem_rmask[channel])) begin
+                    $error("RVFI Interface Error: mem_rmask contains 'x");
+                    itf.error <= 1'b1;
+                end
+                if ($isunknown(itf.mem_wmask[channel])) begin
+                    $error("RVFI Interface Error: mem_wmask contains 'x");
+                    itf.error <= 1'b1;
+                end
+                if (|itf.mem_rmask[channel] || |itf.mem_wmask[channel]) begin
+                    if ($isunknown(itf.mem_addr[channel])) begin
+                        $error("RVFI Interface Error: mem_addr contains 'x");
+                        itf.error <= 1'b1;
+                    end
+                end
+                if (|itf.mem_rmask[channel]) begin
+                    for (int i = 0; i < 4; i++) begin
+                        if (itf.mem_rmask[channel][i]) begin
+                            if ($isunknown(itf.mem_rdata[channel][i*8 +: 8])) begin
+                                $error("RVFI Interface Error: mem_rdata contains 'x");
+                                itf.error <= 1'b1;
+                            end
+                        end
+                    end
+                end
+                if (|itf.mem_wmask[channel]) begin
+                    for (int i = 0; i < 4; i++) begin
+                        if (itf.mem_wmask[channel][i]) begin
+                            if ($isunknown(itf.mem_wdata[channel][i*8 +: 8])) begin
+                                $error("RVFI Interface Error: mem_wdata contains 'x");
+                                itf.error <= 1'b1;
+                            end
+                        end
+                    end
+                end
+            end
+        end endgenerate
+
+    `endif
+
+    `ifndef ECE411_NO_RVFI
+
+        logic [15:0] errcode;
+
+        riscv_formal_monitor_rv32imc monitor(
+            .clock              (itf.clk),
+            .reset              (itf.rst),
+            .rvfi_valid         (rvfi_valid),
+            .rvfi_order         (rvfi_order),
+            .rvfi_insn          (rvfi_insn),
+            .rvfi_trap          (rvfi_trap),
+            .rvfi_halt          (rvfi_halt),
+            .rvfi_intr          (rvfi_intr),
+            .rvfi_mode          (rvfi_mode),
+            .rvfi_rs1_addr      (rvfi_rs1_addr),
+            .rvfi_rs2_addr      (rvfi_rs2_addr),
+            .rvfi_rs1_rdata     (rvfi_rs1_rdata),
+            .rvfi_rs2_rdata     (rvfi_rs2_rdata),
+            .rvfi_rd_addr       (rvfi_rd_addr),
+            .rvfi_rd_wdata      (rvfi_rd_wdata),
+            .rvfi_pc_rdata      (rvfi_pc_rdata),
+            .rvfi_pc_wdata      (rvfi_pc_wdata),
+            .rvfi_mem_addr      (rvfi_mem_addr),
+            .rvfi_mem_rmask     (rvfi_mem_rmask),
+            .rvfi_mem_wmask     (rvfi_mem_wmask),
+            .rvfi_mem_rdata     (rvfi_mem_rdata),
+            .rvfi_mem_wdata     (rvfi_mem_wdata),
+            .rvfi_mem_extamo    (rvfi_mem_extamo),
+            .errcode            (errcode)
+        );
+
+        always @(posedge itf.clk) begin
+            if (errcode != 0) begin
+                $error("RVFI Monitor Error");
+                itf.error <= 1'b1;
+            end
+        end
+
+    `endif
 
 endmodule

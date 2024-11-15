@@ -47,9 +47,9 @@ logic [255:0]  data_out       ;
 //logic [255:0]  dfp_wdata_r    ;
 logic [31:0]   dfp_addr_r     ;
 
-//verilator lint_off UNUSEDSIGNAL
+
 wire x = |ufp_addr[1:0] ;
-//verilator lint_on UNUSEDSIGNAL
+
 
 
 
@@ -363,9 +363,9 @@ logic       lru_wp_csb  ;
 logic       lru_wp_web  ;
 logic [3:0] lru_wp_addr ;
 logic [2:0] lru_wp_din  ;
-// verilator lint_off UNUSEDSIGNAL
+
 logic [2:0] lru_wp_dout ;
-// verilator lint_on UNUSEDSIGNAL
+
 
 always_comb
 begin

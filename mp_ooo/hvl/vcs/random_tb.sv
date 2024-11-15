@@ -98,6 +98,149 @@ import rv32i_types::*;
         end
     endtask : init_register_state
 
+
+   task set_reg_value () ;
+
+      @(posedge itf.clk iff (itf.read));
+
+      for(int i=0;i<8;i++)
+      begin
+         bInstAry[i] = 32'H0000_0013 ;
+      end
+
+      gen.randomize() with {
+          instr.j_type.opcode == op_b_lui;
+          instr.j_type.rd == {5'H01};
+          instr.j_type.imm == '0 ;
+      };
+      
+      bInstAry[0] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.i_type.opcode == op_b_imm;
+          instr.i_type.rs1 == {5'H01};
+          instr.i_type.rd == {5'H01};
+          instr.i_type.funct3 == arith_f3_add ;
+          instr.i_type.i_imm == '1 ;
+      };
+
+      bInstAry[1] = gen.instr.word ;
+
+      do_dmem_read( '0, bInstAry ) ;
+
+
+   endtask
+
+   task run_direct_test ( arith_f3_t funct3 , funct7_t funct7  );
+
+      @(posedge itf.clk iff (itf.read));
+
+      for(int i=0;i<8;i++)
+      begin
+         bInstAry[i] = 32'H0000_0013 ;
+      end
+
+      gen.randomize() with {
+          instr.r_type.opcode == op_b_reg;
+          instr.r_type.rs1 == {5'H00};
+          instr.r_type.rs2 == {5'H00};
+          instr.r_type.rd == {5'H03};
+          instr.r_type.funct3 == funct3 ;
+          instr.r_type.funct7 == funct7 ;
+      };
+      
+      bInstAry[0] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.r_type.opcode == op_b_reg;
+          instr.r_type.rs1 == {5'H00};
+          instr.r_type.rs2 == {5'H01};
+          instr.r_type.rd == {5'H03};
+          instr.r_type.funct3 == funct3 ;
+          instr.r_type.funct7 == funct7 ;
+      };
+
+      bInstAry[1] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.r_type.opcode == op_b_reg;
+          instr.r_type.rs1 == {5'H00};
+          instr.r_type.rs2 == {5'H02};
+          instr.r_type.rd == {5'H03};
+          instr.r_type.funct3 == funct3 ;
+          instr.r_type.funct7 == funct7 ;
+      };
+      
+      bInstAry[2] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.r_type.opcode == op_b_reg;
+          instr.r_type.rs1 == {5'H01};
+          instr.r_type.rs2 == {5'H00};
+          instr.r_type.rd == {5'H03};
+          instr.r_type.funct3 == funct3 ;
+          instr.r_type.funct7 == funct7 ;
+      };
+
+      bInstAry[3] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.r_type.opcode == op_b_reg;
+          instr.r_type.rs1 == {5'H01};
+          instr.r_type.rs2 == {5'H01};
+          instr.r_type.rd == {5'H03};
+          instr.r_type.funct3 == funct3 ;
+          instr.r_type.funct7 == funct7 ;
+      };
+      
+      bInstAry[4] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.r_type.opcode == op_b_reg;
+          instr.r_type.rs1 == {5'H01};
+          instr.r_type.rs2 == {5'H02};
+          instr.r_type.rd == {5'H03};
+          instr.r_type.funct3 == funct3 ;
+          instr.r_type.funct7 == funct7 ;
+      };
+
+      bInstAry[5] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.r_type.opcode == op_b_reg;
+          instr.r_type.rs1 == {5'H02};
+          instr.r_type.rs2 == {5'H00};
+          instr.r_type.rd == {5'H03};
+          instr.r_type.funct3 == funct3 ;
+          instr.r_type.funct7 == funct7 ;
+      };
+      
+      bInstAry[6] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.r_type.opcode == op_b_reg;
+          instr.r_type.rs1 == {5'H02};
+          instr.r_type.rs2 == {5'H01};
+          instr.r_type.rd == {5'H03};
+          instr.r_type.funct3 == funct3 ;
+          instr.r_type.funct7 == funct7 ;
+      };
+
+      bInstAry[7] = gen.instr.word ;
+
+      do_dmem_read( '0, bInstAry ) ;
+
+      @(posedge itf.clk iff (itf.read));
+
+      for(int i=0;i<8;i++)
+      begin
+         bInstAry[i] = 32'H0000_0013 ;
+      end
+
+      do_dmem_read( '0, bInstAry ) ;
+
+   endtask
+
     // Note that this memory model is not consistent! It ignores
     // writes and always reads out a random, valid instruction.
     task run_random_instrs();
@@ -236,6 +379,20 @@ import rv32i_types::*;
         // Get some useful state into the processor by loading in a bunch of state.
         init_register_state();
 
+      set_reg_value();
+      for(int i=0;i<64;i++)
+      begin
+         run_direct_test( arith_f3_t'(i[2:0]) , base ) ;
+         run_direct_test( arith_f3_add , variant ) ;
+         run_direct_test( arith_f3_sr , variant ) ;
+      end
+
+      for(int i=0;i<64;i++)
+      begin
+         //run_direct_test( muldiv_f3_t'(i[2:0]) , muldiv ) ;
+         run_direct_test( arith_f3_t'(i[2:0]) , muldiv ) ;
+      end
+
         // Run!
         run_random_instrs();
 
@@ -246,3 +403,123 @@ import rv32i_types::*;
     end
 
 endmodule : random_tb
+
+
+module rob_mon
+import rv32i_types::*;
+ (
+    input   logic    clk
+   ,input   logic    rst
+   ,rob2mon_itf  rob2mon_itf
+);
+
+
+
+class alu_instr ;
+
+covergroup alu_instr_cg with function sample ( instr_t instr , bit [31:0] rs1 , bit [31:0] rs2 ) ;
+ 
+   coverpoint instr.r_type.opcode {
+      bins VALID = { op_b_reg } ;
+   }
+
+   rs1_32b : coverpoint rs1 {
+      bins MAX = { 32'HFFFF_FFFF } ;
+      bins MIN = { 32'H0000_0000 } ;
+      bins MID = { [1:32'HFFFF_FFFE] } ;
+   }
+
+   rs2_32b : coverpoint rs2 {
+      bins MAX = { 32'HFFFF_FFFF } ;
+      bins MIN = { 32'H0000_0000 } ;
+      bins MID = { [1:32'HFFFF_FFFE] } ;
+   }
+
+   //rs2_5b : coverpoint rs2 {
+   //   bins MAX = { 32'H0000_001F } ;
+   //   bins MIN = { 32'H0000_0000 } ;
+   //   bins MID = { [1:32'H0000_001E] } ;
+   //}
+
+    coverpoint instr.r_type.funct7 {
+      bins ALU0   = { 7'H00 } ;
+      bins ALU1   = { 7'H20 } ;
+      bins MDU    = { 7'H01 } ;
+    }
+
+
+   operand_is_32b : cross instr.r_type.opcode, instr.r_type.funct3, instr.r_type.funct7,  rs1_32b , rs2_32b {
+
+      ignore_bins NOT_32B_OP = operand_is_32b with (
+
+         //SLL and SRX operation is excluded
+         (instr.r_type.funct3 inside {arith_f3_sll,arith_f3_sr} && instr.r_type.funct7 inside {base,variant}) ||
+         
+         //ADD/SUB/XOR .. operation 
+         (instr.r_type.funct3 inside {arith_f3_add}  && !(instr.r_type.funct7 inside {base,variant})) ||
+         (instr.r_type.funct3 inside {arith_f3_slt}  && !(instr.r_type.funct7 inside {base})) ||
+         (instr.r_type.funct3 inside {arith_f3_sltu} && !(instr.r_type.funct7 inside {base})) ||
+         (instr.r_type.funct3 inside {arith_f3_xor}  && !(instr.r_type.funct7 inside {base})) ||
+         (instr.r_type.funct3 inside {arith_f3_or}   && !(instr.r_type.funct7 inside {base})) ||
+         (instr.r_type.funct3 inside {arith_f3_and}  && !(instr.r_type.funct7 inside {base})) 
+
+      );
+
+
+      ignore_bins MUL_DIV_OP = operand_is_32b with (
+         instr.r_type.funct7 inside {muldiv}
+      );
+   }
+
+   operand_is_5b : cross instr.r_type.opcode, instr.r_type.funct3, instr.r_type.funct7,  rs1_32b , rs2_32b {
+
+      ignore_bins NOT_5B_OP = operand_is_5b with (
+
+         //SLL and SRX operation is excluded
+         (!(instr.r_type.funct3 inside {arith_f3_sll,arith_f3_sr}))  ||
+         
+         //ADD/SUB/XOR .. operation 
+         (instr.r_type.funct3 inside {arith_f3_sll}  && !(instr.r_type.funct7 inside {base})) ||
+         (instr.r_type.funct3 inside {arith_f3_sr}  && !(instr.r_type.funct7 inside {base,variant})) 
+
+      );
+
+
+      ignore_bins MUL_DIV_OP = operand_is_5b with (
+         instr.r_type.funct7 inside {muldiv}
+      );
+   }
+
+   mul_div : cross instr.r_type.opcode, instr.r_type.funct3, instr.r_type.funct7,  rs1_32b , rs2_32b {
+
+      ignore_bins NOT_MUL_DIV_OP = mul_div with (
+         !(instr.r_type.funct7 inside {muldiv})
+      );
+
+   }
+
+endgroup
+
+function new () ;
+   alu_instr_cg = new();
+endfunction
+
+function do_sample ( bit [31:0] bInst , bit [31:0] bRs1 , bit [31:0] bRs2 ) ;
+   alu_instr_cg.sample( bInst , bRs1, bRs2 ) ;
+endfunction
+
+endclass
+
+alu_instr oALU = new() ;
+
+always@(posedge clk iff rst == 1'H0 )
+begin
+   if( rob2mon_itf.valid )
+   begin
+      oALU.do_sample( rob2mon_itf.inst , rob2mon_itf.rs1_rdata , rob2mon_itf.rs2_rdata ) ;
+   end
+end
+
+endmodule
+
+//bind rob rob_cov u_rob_cov (.*) ;

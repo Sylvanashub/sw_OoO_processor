@@ -46,6 +46,17 @@ package rv32i_types;
         branch_f3_bgeu = 3'b111
     } branch_f3_t;
 
+    typedef enum logic [2:0] {
+        muldiv_f3_mul   = 3'b000, // check logic 30 for sub if op_reg op
+        muldiv_f3_mulh  = 3'b001,
+        muldiv_f3_mulhsu= 3'b010,
+        muldiv_f3_mulhu = 3'b011,
+        muldiv_f3_div   = 3'b100,
+        muldiv_f3_divu  = 3'b101, // check logic 30 for logical/arithmetic
+        muldiv_f3_rem   = 3'b110,
+        muldiv_f3_remu  = 3'b111
+    } muldiv_f3_t;
+
     // You'll need this type to randomly generate variants of certain
     // instructions that have the funct7 field.
     typedef enum logic [6:0] {

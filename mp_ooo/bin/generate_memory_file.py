@@ -2,6 +2,7 @@
 
 import sys
 import os
+import shutil
 import pathlib
 import subprocess
 import math
@@ -37,15 +38,19 @@ start_file = os.path.join(script_dir, "startup.s")
 linker_script = os.path.join(script_dir, "link.ld")
 compile = True
 
-assembler="riscv32-unknown-elf-gcc"
-objdump="riscv32-unknown-elf-objdump"
-objcopy="riscv32-unknown-elf-objcopy"
-arch = "rv32im"
-abi = "ilp32"
+assembler="riscv64-unknown-elf-gcc"
+objdump="riscv64-unknown-elf-objdump"
+objcopy="riscv64-unknown-elf-objcopy"
+
+result = subprocess.run(f"python3 {script_dir}/get_options.py arch", shell=True, stdout=subprocess.PIPE)
+arch = result.stdout.decode().split('\n')[0]
+result = subprocess.run(f"python3 {script_dir}/get_options.py abi", shell=True, stdout=subprocess.PIPE)
+abi = result.stdout.decode().split('\n')[0]
+
 opt = "-Ofast -flto"
 warn = "-Wall -Wextra -Wno-unused"
 include = "" if len(input_file) == 1 else f"-I {os.path.dirname(os.path.abspath(input_file[0]))}"
-assembler_args = f"-mcmodel=medany -static -fno-common -ffreestanding -nostartfiles -lm -static-libgcc -lgcc -lc -Wl,--no-relax -march={arch} -mabi={abi} {opt} {warn} -T {linker_script} {include}"
+assembler_args = f"-mcmodel=medany -ffreestanding -nostartfiles -static -static-libgcc -lm -lgcc -lc -Wl,--no-relax -march={arch} -mabi={abi} {opt} {warn} -T {linker_script} {include}"
 
 out_elf_file = os.path.join(work_dir, pathlib.Path(input_file[0]).stem + ".elf")
 out_dis_file = os.path.join(work_dir, pathlib.Path(input_file[0]).stem + ".dis")

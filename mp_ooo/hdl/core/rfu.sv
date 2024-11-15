@@ -16,7 +16,7 @@ module rfu #(
 logic [31:0]      busy     ;
 logic [TAG_W-1:0] tag [32] ;
 logic [31:0]      mem [32]  ;
-
+wire _x = |cdb_itf.inst_id ;
 //assign busy[0] = '0 ;
 //assign tag[0]  = '0 ;
 //assign mem[0]  = '0 ;

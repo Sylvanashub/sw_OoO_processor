@@ -12,6 +12,20 @@ os.chdir("..")
 with open("options.json") as f:
     j = json.load(f)
 
+if sys.argv[1] == "arch":
+    retval = "rv32im"
+    if j["f_ext"]:
+        retval += 'f'
+    if j["c_ext"]:
+        retval += 'c'
+    print(retval)
+
+if sys.argv[1] == "abi":
+    retval = "ilp32"
+    if j["f_ext"]:
+        retval += 'f'
+    print(retval)
+
 if sys.argv[1] == "clock":
     if j["clock"] % 2 != 0 or j["clock"] < 0:
         print("Error: clock period must be a even positive number")
@@ -31,6 +45,10 @@ if sys.argv[1] == "dw_ip":
         if result.returncode == 1:
             with open("sim/vcs_warn.config", "a") as f:
                 f.write("{\n    +lint=none;\n    +module=" + i + ";\n}\n")
+        result = subprocess.run(f"grep -nw {i} sim/xprop.config", shell=True, stdout=subprocess.PIPE)
+        if result.returncode == 1:
+            with open("sim/xprop.config", "a") as f:
+                f.write("module {" + i + "} {xpropOff};\n")
     print(' '.join([os.environ["DW"] + '/sim_ver/' + x + '.v' for x in j['dw_ip']]))
 
 if sys.argv[1] == "min_power":

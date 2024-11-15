@@ -3,7 +3,9 @@ module mdu
 import rv32i_types::*;
 //#(
 //
-//   parameter   TAG_W    = 32'D4  
+//   //parameter   TAG_W    = 32'D4  
+//    parameter  ROB_DEPTH   = 32'D16
+//   ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
 //
 //)
 (
@@ -27,6 +29,8 @@ localparam  DONE  = 2'H3 ;
 logic [1:0] state_r ;
 logic [1:0] state_nxt ;
 
+//logic [ROB_PTR_W-1:0]   inst_id_r ;
+
 logic [32:0] a;
 logic [32:0] b;
 logic [32:0] a_r;
@@ -36,15 +40,15 @@ logic [32:0] opd_b;
 logic [2:0] opc_r ;
 logic is_mul_opc ;
 logic is_div_opc ;
-logic rvs2mdu_itf_rdy ;
+//logic rvs2mdu_itf_rdy ;
 logic mul_complete ;
 logic div_start ;
 logic div_complete   ;
-// verilator lint_off UNUSEDSIGNAL
+
 logic div_divide_by_0   ;
 logic [4:0] _x ;
 assign _x[4] = |rvs2mdu_itf.offset ;
-// verilator lint_on UNUSEDSIGNAL
+
 
 logic [31:0] div_quotient ;
 logic [31:0] div_remainder ;
@@ -217,15 +221,15 @@ DW_mult_seq #(
 
 `endif
 
-always_ff@(posedge clk)
-begin
-   if( rst )
-      rvs2mdu_itf_rdy <= '1 ;
-   else if( rvs2mdu_itf_rdy && rvs2mdu_itf.req)
-      rvs2mdu_itf_rdy <= '0 ;
-   else
-      rvs2mdu_itf_rdy <= '1 ;
-end
+//always_ff@(posedge clk)
+//begin
+//   if( rst )
+//      rvs2mdu_itf_rdy <= '1 ;
+//   else if( rvs2mdu_itf_rdy && rvs2mdu_itf.req)
+//      rvs2mdu_itf_rdy <= '0 ;
+//   else
+//      rvs2mdu_itf_rdy <= '1 ;
+//end
 
 //assign rvs2mdu_itf.rdy = rvs2mdu_itf_rdy ;
 //assign rvs2mdu_itf.rdy = (state_r == IDLE) || (((state_r == DONE) || (state_r==WAIT)) && mdu2cdb_itf.rdy) ;
@@ -295,11 +299,13 @@ always_ff@(posedge clk)
 begin
    if( rst )
    begin
-      mdu2cdb_itf.tag  <= '0 ;
+      mdu2cdb_itf.tag      <= '0 ;
+      mdu2cdb_itf.inst_id  <= '0 ;
    end
    else if( rvs2mdu_itf.req && rvs2mdu_itf.rdy )
    begin
-      mdu2cdb_itf.tag  <= rvs2mdu_itf.tag ;
+      mdu2cdb_itf.tag      <= rvs2mdu_itf.tag      ;
+      mdu2cdb_itf.inst_id  <= rvs2mdu_itf.inst_id  ;
    end
 end
 assign mdu2cdb_itf.req   = state_r == DONE ;

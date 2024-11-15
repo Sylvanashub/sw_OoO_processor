@@ -24,9 +24,9 @@ module ooo #(
    ,output  logic [31:0]   dmem_addr
    ,output  logic [3:0]    dmem_rmask
    ,output  logic [3:0]    dmem_wmask
-//   ,input   logic [31:0]   dmem_rdata
+   ,input   logic [31:0]   dmem_rdata
    ,output  logic [31:0]   dmem_wdata
-//   ,input   logic          dmem_resp   
+   ,input   logic          dmem_resp   
 
 );
 
@@ -64,9 +64,12 @@ cdb_itf     cdb_itf();
 dec2rob_itf dec2rob_itf() ;
 rob2mon_itf rob2mon_itf();
 
-rvs2rob_itf #(.TAG_W( TAG_W ) ) alu_rvs2rob_itf() ;
-rvs2rob_itf #(.TAG_W( TAG_W ) ) mdu_rvs2rob_itf() ;
-rvs2rob_itf #(.TAG_W( TAG_W ) ) lsu_rvs2rob_itf() ;
+rob2lsu_itf rob2lsu_itf();
+
+rvs2rob_itf rvs2rob_itf() ;
+//rvs2rob_itf #(.TAG_W( TAG_W ) ) alu_rvs2rob_itf() ;
+//rvs2rob_itf #(.TAG_W( TAG_W ) ) mdu_rvs2rob_itf() ;
+//rvs2rob_itf #(.TAG_W( TAG_W ) ) lsu_rvs2rob_itf() ;
 
 //------------------------------------------------------------------------------
 // pipeline instance
@@ -108,7 +111,7 @@ rvs #(
    .*
    ,.dec2rvs_itf ( dec2alu_rvs_itf  )
    ,.rvs2exu_itf ( rvs2alu_itf      )
-   ,.rvs2rob_itf ( alu_rvs2rob_itf  )
+//   ,.rvs2rob_itf ( alu_rvs2rob_itf  )
 );
 
 rvs #(
@@ -120,7 +123,7 @@ rvs #(
    .*
    ,.dec2rvs_itf ( dec2mdu_rvs_itf  )
    ,.rvs2exu_itf ( rvs2mdu_itf      )
-   ,.rvs2rob_itf ( mdu_rvs2rob_itf  )
+//   ,.rvs2rob_itf ( mdu_rvs2rob_itf  )
 );
 
 rvs #(
@@ -132,7 +135,7 @@ rvs #(
    .*
    ,.dec2rvs_itf ( dec2lsu_rvs_itf  )
    ,.rvs2exu_itf ( rvs2lsu_itf      )
-   ,.rvs2rob_itf ( lsu_rvs2rob_itf  )
+//   ,.rvs2rob_itf ( lsu_rvs2rob_itf  )
 );
 
 alu u_alu (

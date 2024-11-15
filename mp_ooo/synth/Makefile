@@ -9,7 +9,6 @@ export HDL_SRCS = $(shell find $(PWD)/../hdl -name '*.sv')
 export SRAM_LIB = $(shell find $(PWD)/../sram/output/ -name "*.db")
 export DESIGN_TOP = cpu
 
-#export FREEPDK45 = /pool/gxli/project/Idlefish/mp/freepdk-45nm-master
 export STD_CELL_LIB=$(FREEPDK45)/stdcells.db
 export STD_CELL_ALIB=$(FREEPDK45)/alib
 

@@ -33,7 +33,7 @@ logic                   enqueue ;
 logic [DATA_WIDTH-1:0]  wdata   ;
 logic [DATA_WIDTH-1:0]  rdata   ;
 logic                   is_full ;
-
+logic [4:0]             count    ;
 logic pc_inc ;
 
 assign pc_inc = (state_r == IDLE) || (state_r == READ) && ufp_resp ;
@@ -72,8 +72,6 @@ begin
    endcase
 end
 
-
-
 assign enqueue = (state_r == READ) && ufp_resp ;
 assign wdata   = {pc_fifo_r,ufp_rdata} ;
 
@@ -86,20 +84,11 @@ sync_fifo #(
 
    .* 
 
-   // .clk       ()  //i logic                  
-   //,.rst       ()  //i logic                  
-   //,.enqueue   ()  //i logic                  
-   //,.wdata     ()  //i logic  [DATA_WIDTH-1:0]
-   //,.dequeue   ()  //i logic                  
-   //,.rdata     ()  //o logic  [DATA_WIDTH-1:0]
-   //,.is_full   ()  //o logic                  
-   //,.is_empty  ()  //o logic                  
-
 );
 assign dequeue_rdata = rdata ;
 
 assign ufp_addr  = pc_r ;
-assign ufp_rmask = (state_r == IDLE || state_r == READ) ? '1 : '0 ;
+assign ufp_rmask = (state_r == IDLE || state_r == READ) && (count <= 5'H08) ? '1 : '0 ;
 assign ufp_wmask = '0 ;
 assign ufp_wdata = '0 ;
 

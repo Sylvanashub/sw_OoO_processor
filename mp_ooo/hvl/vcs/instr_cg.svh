@@ -70,7 +70,10 @@ covergroup instr_cg with function sample(instr_t instr);
     // Coverpoint to make separate bins for funct7.
     coverpoint instr.r_type.funct7 {
         bins range[] = {[0:$]};
-        ignore_bins not_in_spec = {[1:31], [33:127]};
+
+        //Add b000_0001 as valid value for funct7
+        //ignore_bins not_in_spec = {[1:31], [33:127]};
+        ignore_bins not_in_spec = {[2:31], [33:127]};
     }
 
     // Cross coverage for funct7.
@@ -92,13 +95,64 @@ covergroup instr_cg with function sample(instr_t instr);
          );
 
          illegal_bins INST_REG_0 = funct7_cross with (
-         instr.r_type.opcode == op_b_reg && !(instr.r_type.funct3 inside {arith_f3_add,arith_f3_sr})  &&  instr.r_type.funct7 != base
+         //Add mul/div instruction
+         //instr.r_type.opcode == op_b_reg && !(instr.r_type.funct3 inside {arith_f3_add,arith_f3_sr})  &&  instr.r_type.funct7 != base
+         instr.r_type.opcode == op_b_reg && !(instr.r_type.funct3 inside {arith_f3_add,arith_f3_sr})  &&  !(instr.r_type.funct7 inside {base,muldiv})
          );
+
+    }
+
+    md_inst_cross : cross instr.r_type.opcode, instr.r_type.funct3, instr.r_type.funct7 {
+
+      ignore_bins OTHRE_INST = md_inst_cross with (
+         !(instr.r_type.opcode inside {op_b_reg}) ||
+         (instr.r_type.funct7 != muldiv)
+      );
 
     }
 
 endgroup : instr_cg
 
 //covergroup alu_instr_cg with function sample ( instr_t instr , bit [31:0] rs1 , bit [31:0] rs2 ) ;
-//   
+// 
+//   coverpoint instr.i_type.opcode {
+//      bins VALID = { op_b_reg } ;
+//   }
+//
+//   rs1_32b : coverpoint rs1 {
+//      bins MAX = { 32'HFFFF_FFFF } ;
+//      bins MIN = { 32'H0000_0000 } ;
+//      bins MID = { [1:32'HFFFF_FFFE] } ;
+//   }
+//
+//   rs2_32b : coverpoint rs2 {
+//      bins MAX = { '1 } ;
+//      bins MIN = { '0 } ;
+//      bins MID = { [1:32'HFFFF_FFFE] } ;
+//   }
+//
+//   rs2_5b : coverpoint rs2 {
+//      bins MAX = { 32'H0000_001F } ;
+//      bins MIN = { 32'H0000_0000 } ;
+//      bins MID = { [1:32'H0000_001E] } ;
+//   }
+//
+//    coverpoint instr.r_type.funct7 {
+//      bins ALU0   = { 7'H00 } ;
+//      bins ALU1   = { 7'H20 } ;
+//      bins MDU    = { 7'H01 } ;
+//    }
+//
+//
+//   operand_is_32b : cross instr.r_type.opcode, instr.r_type.funct3, instr.r_type.funct7,  rs1_32b , rs2_32b {
+//      
+//      ignore_bins NOT_32B_OP = operand_is_32b with (
+//
+//         instr.r_type.funct3 inside {arith_f3_sll,arith_f3_sr} && instr.r_type.funct7 inside {base,variant}
+//
+//      );
+//   }
+//
 //endgroup
+
+
