@@ -13,7 +13,8 @@ module top_tb;
 
     bit rst;
 
-    int timeout = 10000000; // in cycles, change according to your needs
+    //int timeout = 10000000; // in cycles, change according to your needs
+    int timeout = 2_000_000_000; // in cycles, change according to your needs
 
 
     mem_itf_banked bmem_itf(.*);
@@ -45,8 +46,8 @@ module top_tb;
     `include "rvfi_reference.svh"
 
     initial begin
-        $fsdbDumpfile("dump.fsdb");
-        $fsdbDumpvars(0, "+all");
+//        $fsdbDumpfile("dump.fsdb");
+//        $fsdbDumpvars(0, "+all");
         rst = 1'b1;
         repeat (2) @(posedge clk);
         rst <= 1'b0;

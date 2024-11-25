@@ -36,7 +36,7 @@ localparam  IDLE  = 2'H0 ;
 localparam  LOAD  = 2'H1 ;
 localparam  STORE = 2'H2 ;
 
-typedef struct packed {
+typedef struct {
 
    logic                   valid    ;
    logic [3:0]             opc      ;
@@ -190,6 +190,16 @@ begin
    end
 end
 
+logic [31:0] cdb_wdata_r ;
+always_ff@(posedge clk)
+begin
+   if( rst )
+      cdb_wdata_r <= '0 ;
+   else if( dmem_resp )
+      cdb_wdata_r <= cdb_wdata ;
+end
+
+
 
 always_comb
 begin
@@ -203,10 +213,20 @@ begin
    endcase
 end
 
+logic req_r ;
+always_ff@(posedge clk)
+begin
+   if( rst )
+      req_r <= '0 ;
+   else 
+      req_r <= lsu2cdb_itf.req && ~lsu2cdb_itf.rdy ;
+end
+
+
 //store also need cdb to write tag to flag that store instruction is done
-assign lsu2cdb_itf.req     = (state_r == LOAD || state_r == STORE) && dmem_resp ;
+assign lsu2cdb_itf.req     = req_r || ((state_r == LOAD || state_r == STORE) && dmem_resp) ;
 //assign lsu2cdb_itf.tag     = lsq_entries[rptr[PTR_W-1:0]].tag ;
-assign lsu2cdb_itf.wdata   = cdb_wdata ;
+assign lsu2cdb_itf.wdata   = req_r ? cdb_wdata_r : cdb_wdata ;
 //assign lsu2cdb_itf.inst_id = lsq_entries[rptr[PTR_W-1:0]].inst_id ;
 
 //------------------------------------------------------------------------------

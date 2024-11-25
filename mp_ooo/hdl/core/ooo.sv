@@ -1,15 +1,19 @@
 module ooo #(
 
-   parameter   RVS_ALU_DEPTH  = 32'D4 ,
-   parameter   RVS_MDU_DEPTH  = 32'D4 ,
-   parameter   RVS_LDU_DEPTH  = 32'D4 ,
+   parameter   RVS_ALU_DEPTH  = 4 ,
+   parameter   RVS_MDU_DEPTH  = 4 ,
+   parameter   RVS_LSU_DEPTH  = 4 ,
+   parameter   RVS_JMP_DEPTH  = 4 ,
 
-   parameter   RVS_NUM = RVS_ALU_DEPTH + RVS_MDU_DEPTH + RVS_LDU_DEPTH ,
+   parameter   ROB_DEPTH      = 16 ,
+
+   parameter   RVS_NUM = RVS_ALU_DEPTH + RVS_MDU_DEPTH + RVS_LSU_DEPTH + RVS_JMP_DEPTH + 1,
    parameter   TAG_W = $clog2(RVS_NUM),
 
    parameter   ALU_START_ID   = 1,
    parameter   MDU_START_ID   = ALU_START_ID + RVS_ALU_DEPTH ,
-   parameter   LSU_START_ID   = MDU_START_ID + RVS_MDU_DEPTH 
+   parameter   LSU_START_ID   = MDU_START_ID + RVS_MDU_DEPTH ,
+   parameter   JMP_START_ID   = LSU_START_ID + RVS_LSU_DEPTH 
 
 ) (
 
@@ -34,6 +38,9 @@ logic          dequeue        ;
 logic [63:0]   dequeue_rdata  ;
 logic          is_empty       ;
 
+logic          flush    ;
+logic [31:0]   pc_new   ;
+
 //assign dmem_addr  = '0 ;
 //assign dmem_rmask = '0 ;
 //assign dmem_wmask = '0 ;
@@ -45,31 +52,33 @@ logic          is_empty       ;
 dec2rvs_itf #(.TAG_W(TAG_W), .OPC_W(4)) dec2alu_rvs_itf();
 dec2rvs_itf #(.TAG_W(TAG_W), .OPC_W(3)) dec2mdu_rvs_itf();
 dec2rvs_itf #(.TAG_W(TAG_W), .OPC_W(4)) dec2lsu_rvs_itf();
-//dec2rvs_itf dec2stu_rvs_itf();
+dec2rvs_itf #(.TAG_W(TAG_W), .OPC_W(4)) dec2jmp_rvs_itf();
 
-dec2rfu_itf dec2rfu_itf();
+rob2gpr_itf rob2gpr_itf();
 
 rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(4)) rvs2alu_itf() ;
 rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(3)) rvs2mdu_itf() ;
 rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(4)) rvs2lsu_itf() ;
-//rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(3)) rvs2stu_itf() ;
+rvs2exu_itf #(.TAG_W(TAG_W), .OPC_W(4)) rvs2jmp_itf() ;
 
-exu2cdb_itf alu2cdb_itf() ;
-exu2cdb_itf mdu2cdb_itf() ;
-exu2cdb_itf lsu2cdb_itf() ;
-//exu2cdb_itf stu2cdb_itf() ;
+exu2cdb_itf #(.TAG_W(TAG_W), .ROB_DEPTH(ROB_DEPTH)) alu2cdb_itf() ;
+exu2cdb_itf #(.TAG_W(TAG_W), .ROB_DEPTH(ROB_DEPTH)) mdu2cdb_itf() ;
+exu2cdb_itf #(.TAG_W(TAG_W), .ROB_DEPTH(ROB_DEPTH)) lsu2cdb_itf() ;
+exu2cdb_itf #(.TAG_W(TAG_W), .ROB_DEPTH(ROB_DEPTH)) jmp2cdb_itf() ;
 
-cdb_itf     cdb_itf();
+cdb_itf     #(.TAG_W(TAG_W), .ROB_DEPTH(ROB_DEPTH)) cdb_itf();
 
-dec2rob_itf dec2rob_itf() ;
+dec2rob_itf #(.TAG_W(TAG_W), .ROB_DEPTH(ROB_DEPTH)) dec2rob_itf() ;
 rob2mon_itf rob2mon_itf();
 
 rob2lsu_itf rob2lsu_itf();
 
 rvs2rob_itf rvs2rob_itf() ;
-//rvs2rob_itf #(.TAG_W( TAG_W ) ) alu_rvs2rob_itf() ;
-//rvs2rob_itf #(.TAG_W( TAG_W ) ) mdu_rvs2rob_itf() ;
-//rvs2rob_itf #(.TAG_W( TAG_W ) ) lsu_rvs2rob_itf() ;
+
+dec2rat_itf dec2rat_itf() ;
+rob2rat_itf rob2rat_itf() ;
+
+rob2jmp_itf rob2jmp_itf() ;
 
 //------------------------------------------------------------------------------
 // pipeline instance
@@ -92,13 +101,10 @@ dec #(
 
 ) u_dec (
    .*
+   ,.rst ( rst || flush ) 
 );
 
-rfu  #(
-   
-   .TAG_W( TAG_W )
-
-) u_rfu (
+gpr u_gpr (
    .*
 );
 
@@ -109,6 +115,7 @@ rvs #(
    ,.START_ID  ( ALU_START_ID    )
 ) u_alu_rvs (
    .*
+   ,.rst ( rst || flush ) 
    ,.dec2rvs_itf ( dec2alu_rvs_itf  )
    ,.rvs2exu_itf ( rvs2alu_itf      )
 //   ,.rvs2rob_itf ( alu_rvs2rob_itf  )
@@ -121,6 +128,7 @@ rvs #(
    ,.START_ID  ( MDU_START_ID    )
 ) u_mdu_rvs (
    .*
+   ,.rst ( rst || flush ) 
    ,.dec2rvs_itf ( dec2mdu_rvs_itf  )
    ,.rvs2exu_itf ( rvs2mdu_itf      )
 //   ,.rvs2rob_itf ( mdu_rvs2rob_itf  )
@@ -129,39 +137,66 @@ rvs #(
 rvs #(
     .TAG_W     ( TAG_W           )
    ,.OPC_W     ( 4               )
-   ,.DEPTH     ( RVS_LDU_DEPTH   )
+   ,.DEPTH     ( RVS_LSU_DEPTH   )
    ,.START_ID  ( LSU_START_ID    )
 ) u_ldu_rvs (
    .*
+   ,.rst ( rst || flush ) 
    ,.dec2rvs_itf ( dec2lsu_rvs_itf  )
    ,.rvs2exu_itf ( rvs2lsu_itf      )
 //   ,.rvs2rob_itf ( lsu_rvs2rob_itf  )
 );
 
+rvs #(
+    .TAG_W     ( TAG_W           )
+   ,.OPC_W     ( 4               )
+   ,.DEPTH     ( RVS_JMP_DEPTH   )
+   ,.START_ID  ( JMP_START_ID    )
+) u_jmp_rvs (
+   .*
+   ,.rst ( rst || flush ) 
+   ,.dec2rvs_itf ( dec2jmp_rvs_itf  )
+   ,.rvs2exu_itf ( rvs2jmp_itf      )
+//   ,.rvs2rob_itf ( lsu_rvs2rob_itf  )
+);
+
 alu u_alu (
    .*
+   ,.rst ( rst || flush ) 
 );
 
 mdu u_mdu (
    .*
+   ,.rst ( rst || flush ) 
 );
 
 lsu u_lsu (
    .*
+   ,.rst ( rst || flush ) 
 );
 
-//stu u_stu (
-//   .*
-//);
+jmp u_jmp (
+   .*
+   ,.rst ( rst || flush ) 
+);
 
 cdb  u_cdb (
    .*
+   ,.rst ( rst || flush ) 
 );
 
 rob  #(
    .TAG_W( TAG_W )
 ) u_rob  (
    .*
+   //,.rst ( rst || flush ) 
+);
+
+rat #(
+   .ROB_DEPTH  ( ROB_DEPTH )
+) u_rat (
+   .*
+   ,.rst ( rst || flush ) 
 );
 
 endmodule

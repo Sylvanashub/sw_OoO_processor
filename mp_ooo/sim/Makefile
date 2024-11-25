@@ -23,10 +23,13 @@ VER_TRACE_END   ?= -1
 # ../hdl/core/rvs.sv
 # ../hdl/core/sync_fifo.sv
 # ../hdl/core/rfu.sv
+# ../hdl/core/grf.sv
+# ../hdl/core/rat.sv
 # ../hdl/core/dec.sv
 # ../hdl/core/rob.sv
 # ../hdl/core/itf.sv
 # ../hdl/core/lsu.sv
+# ../hdl/core/jmp.sv
 # ../hdl/core/cdb.sv
 # ../hdl/core/fetch.sv
 # ../hdl/core/ooo.sv
@@ -80,10 +83,18 @@ endif
 
 VER_FLAGS= -Wall --timescale 1ps/1ps --trace-structs --trace-max-array 128 -Mdir build -O3 -CFLAGS "-Ofast -march=native" --x-assign fast --x-initial fast --noassert --cc ../verilator_warn.vlt +incdir+$(DW)/sim_ver +incdir+$(PWD)/../hvl/vcs +incdir+$(PWD)/../hvl/common
 
+INST ?= jal
+
 #S_FILE := ../testcode/ooo_test.s
 #S_FILE := ../testcode/dependency_test.s
-S_FILE := ../testcode/ls_test.s
-
+#S_FILE := ../testcode/ls_test.s
+#S_FILE := ../testcode/$(INST).s
+#S_FILE := ../testcode/coremark_im.elf
+#S_FILE := ../testcode/cp3_release_benches/aes_sha.elf
+#S_FILE := ../testcode/cp3_release_benches/fft.elf
+S_FILE := ../testcode/cp3_release_benches/mergesort.elf
+isa:
+	/eda/tools_22/synopsys/icc2/T-2022.03/etc/Python/bin/python3 ../bin/generate_memory_file.py -32 ../testcode/$(INST).S
 run:
 	mkdir -p vcs
 	/eda/tools_22/synopsys/icc2/T-2022.03/etc/Python/bin/python3 ../bin/rvfi_reference.py

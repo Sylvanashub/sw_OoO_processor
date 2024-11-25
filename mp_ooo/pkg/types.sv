@@ -161,4 +161,15 @@ package rv32i_types;
 
     } lsu_op_type ;
 
+   typedef enum logic [3:0] {
+      jmp_op_jal  = 4'B1000,
+      jmp_op_jalr = 4'B1001,
+      jmp_op_beq  = 4'B0000,
+      jmp_op_bne  = 4'B0001,
+      jmp_op_blt  = 4'B0100,
+      jmp_op_bge  = 4'B0101,
+      jmp_op_bltu = 4'B0110,
+      jmp_op_bgeu = 4'B0111
+   } jmp_op_type ;
+
 endpackage : rv32i_types

@@ -1,4 +1,40 @@
 
+interface rob2gpr_itf () ;
+
+   logic [4:0]          rs1_addr ;
+   logic [31:0]         rs1_rdata;
+   logic [4:0]          rs2_addr ;
+   logic [31:0]         rs2_rdata;
+   logic [4:0]          rd_addr  ;
+   logic                rd_wr    ;
+   logic [31:0]         rd_wdata ;
+
+   modport rob (
+
+       output  rs1_addr 
+      ,input   rs1_rdata
+      ,output  rs2_addr 
+      ,input   rs2_rdata
+      ,output  rd_addr  
+      ,output  rd_wr    
+      ,output  rd_wdata 
+
+   );
+
+   modport gpr (
+
+       input   rs1_addr 
+      ,output  rs1_rdata
+      ,input   rs2_addr 
+      ,output  rs2_rdata
+      ,input   rd_addr  
+      ,input   rd_wr    
+      ,input   rd_wdata 
+
+   );
+
+endinterface
+
 interface dec2rfu_itf #(
 
    parameter   TAG_W = 32'D4
@@ -244,6 +280,8 @@ interface dec2rob_itf #(
    logic [31:0]            pc          ;
    logic [TAG_W-1:0]       tag         ;
 
+   logic                   rs1_valid   ;
+   logic                   rs2_valid   ;
    logic [TAG_W-1:0]       rs1_tag     ;
    logic [TAG_W-1:0]       rs2_tag     ;
    logic [31:0]            rs1_rdata   ;
@@ -251,18 +289,28 @@ interface dec2rob_itf #(
 
    logic [ROB_PTR_W-1:0]   inst_id     ;
 
+//   logic [ROB_PTR_W-1:0]   rob_id      ;
+//   logic [TAG_W-1:0]       rs_tag      ;
+//   logic [31:0]            rs_rdata    ;
+
    modport dec  (
        output  issue
       ,output  inst 
       ,output  pc   
       ,output  tag  
 
-      ,output  rs1_tag   
-      ,output  rs2_tag   
-      ,output  rs1_rdata 
-      ,output  rs2_rdata 
+      ,input   rs1_valid
+      ,input   rs2_valid
+      ,input   rs1_tag   
+      ,input   rs2_tag   
+      ,input   rs1_rdata 
+      ,input   rs2_rdata 
 
       ,input   inst_id
+
+//      ,output  rob_id
+//      ,input   rs_tag
+//      ,input   rs_rdata
    );
 
    modport rob  (
@@ -271,12 +319,19 @@ interface dec2rob_itf #(
       ,input   pc   
       ,input   tag  
 
-      ,input   rs1_tag   
-      ,input   rs2_tag   
-      ,input   rs1_rdata 
-      ,input   rs2_rdata 
+      ,output  rs1_valid
+      ,output  rs2_valid
+      ,output  rs1_tag   
+      ,output  rs2_tag   
+      ,output  rs1_rdata 
+      ,output  rs2_rdata 
 
       ,output  inst_id
+
+//      ,input   rob_id
+//      ,output  rs_tag
+//      ,output  rs_rdata
+
    );
 
 endinterface
@@ -324,6 +379,130 @@ interface rob2lsu_itf
 
 endinterface
 
+interface rob2jmp_itf 
+#(
+
+   parameter   ROB_PTR_W = 32'H4
+
+)
+() ;
+
+   logic [ROB_PTR_W-1:0]   pc_rob_id ;
+   logic [31:0]            pc ;
+   logic [ROB_PTR_W-1:0]   rob_id ;
+   logic                   ready ;
+
+   modport rob  (
+
+       input   pc_rob_id
+      ,output  pc
+      ,output  rob_id
+      ,output  ready
+
+   );
+
+   modport jmp  (
+
+       output  pc_rob_id
+      ,input   pc
+      ,input   rob_id
+      ,input   ready
+   );
+
+endinterface
+
+
+
+interface dec2rat_itf 
+#(
+
+   parameter   ROB_PTR_W = 32'H4
+
+)
+() ;
+
+   logic                   rd_wr       ;
+   logic [4:0]             rd_addr     ;
+   logic [ROB_PTR_W-1:0]   rob_id      ;
+
+   logic [4:0]             rs1_addr    ;
+   logic [4:0]             rs2_addr    ;
+//   logic                   rs1_valid   ;
+//   logic                   rs2_valid   ;
+//   logic [ROB_PTR_W-1:0]   rs1_rob_id  ;
+//   logic [ROB_PTR_W-1:0]   rs2_rob_id  ;
+
+   modport dec  (
+
+       output  rd_wr     
+      ,output  rd_addr   
+      ,output  rob_id    
+
+      ,output  rs1_addr
+      ,output  rs2_addr
+//      ,input   rs1_valid 
+//      ,input   rs2_valid 
+//      ,input   rs1_rob_id
+//      ,input   rs2_rob_id
+
+   );
+
+   modport rat  (
+
+       input   rd_wr     
+      ,input   rd_addr   
+      ,input   rob_id    
+
+      ,input   rs1_addr
+      ,input   rs2_addr
+//      ,output  rs1_valid 
+//      ,output  rs2_valid 
+//      ,output  rs1_rob_id
+//      ,output  rs2_rob_id
+
+   );
+
+endinterface
+
+interface rob2rat_itf #(
+
+   parameter   ROB_PTR_W = 32'H4
+
+) ();
+
+   logic                   commit   ;
+   logic [4:0]             rd_addr  ;
+   logic [ROB_PTR_W-1:0]   rob_id      ;
+   logic                   rs1_valid   ;
+   logic                   rs2_valid   ;
+   logic [ROB_PTR_W-1:0]   rs1_rob_id  ;
+   logic [ROB_PTR_W-1:0]   rs2_rob_id  ;
+
+   modport rob (
+
+       output  commit
+      ,output  rd_addr
+      ,output  rob_id
+      ,input   rs1_valid 
+      ,input   rs2_valid 
+      ,input   rs1_rob_id
+      ,input   rs2_rob_id
+
+   );
+
+   modport rat (
+
+       input   commit
+      ,input   rd_addr
+      ,input   rob_id
+      ,output  rs1_valid 
+      ,output  rs2_valid 
+      ,output  rs1_rob_id
+      ,output  rs2_rob_id
+
+   );
+
+endinterface
 
 interface rob2mon_itf () ;
 
