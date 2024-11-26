@@ -2,7 +2,7 @@
 module rvs 
 #(
 
-    parameter  DEPTH       = 32'D4 
+    parameter  DEPTH       = 4 
    ,parameter  TAG_W       = 32'D4 
    ,parameter  OPC_W       = 32'D4 
    ,parameter  START_ID    = 32'D1 

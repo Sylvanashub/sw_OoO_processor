@@ -5,10 +5,10 @@ import rv32i_types::*;
 
     parameter  TAG_W       = 32'D4  
 
-   ,parameter  ROB_DEPTH   = 32'D16
+   ,parameter  ROB_DEPTH   = 16
    ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
 
-   ,parameter  DEPTH       = 32'D4
+   ,parameter  DEPTH       = 4
    ,parameter  PTR_W       = $clog2(DEPTH)
 
 ) 

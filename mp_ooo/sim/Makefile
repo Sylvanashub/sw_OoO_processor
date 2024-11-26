@@ -49,6 +49,7 @@ VER_TRACE_END   ?= -1
 # ../hvl/common/mem_itf.sv
 # ../hvl/common/dram_w_burst_frfcfs_controller.sv
 # ../hvl/common/mon_itf.sv
+# ../hvl/vcs/rvfi_connect.sv
 # ../hvl/vcs/randinst.svh
 # ../hvl/vcs/top_tb.sv
 # ../hvl/vcs/instr_cg.svh
@@ -92,7 +93,7 @@ INST ?= jal
 #S_FILE := ../testcode/coremark_im.elf
 #S_FILE := ../testcode/cp3_release_benches/aes_sha.elf
 #S_FILE := ../testcode/cp3_release_benches/fft.elf
-S_FILE := ../testcode/cp3_release_benches/mergesort.elf
+S_FILE ?= ../testcode/cp3_release_benches/mergesort.elf
 isa:
 	/eda/tools_22/synopsys/icc2/T-2022.03/etc/Python/bin/python3 ../bin/generate_memory_file.py -32 ../testcode/$(INST).S
 run:

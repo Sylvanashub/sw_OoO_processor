@@ -3,7 +3,7 @@ module rat #(
 
     parameter  ROB_DEPTH   = 32'D16
    ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
-   ,parameter  REG_NUM     = 32'D32
+   ,parameter  REG_NUM     = 32
 
 ) (
 

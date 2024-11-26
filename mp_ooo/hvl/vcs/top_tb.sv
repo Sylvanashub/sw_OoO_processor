@@ -28,6 +28,7 @@ module top_tb;
 
     mon_itf #(.CHANNELS(8)) mon_itf(.*);
     monitor #(.CHANNELS(8)) monitor(.itf(mon_itf));
+   rvfi_connect u_rvfi_connect (.*);
 
     cpu dut(
         .clk            (clk),
