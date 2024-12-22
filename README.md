@@ -10,6 +10,6 @@ SW is an OoO processor featuring a 4-way set-associative L1 cache and branch pre
 
 ## Performance
 
-![image-20241221215506435](https://raw.githubusercontent.com/Sylvanashub/sylvanashub.github.io/main/img/202412212158744.png)
+<img src="https://raw.githubusercontent.com/Sylvanashub/sylvanashub.github.io/main/img/202412212158744.png" alt="image-20241221215506435" style="zoom: 67%;" />
 
 ooo core I have 40% Areas, and Icache and dcache about 30 percent each.
