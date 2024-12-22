@@ -1,4 +1,4 @@
-# IWD
+# SW
 SW is an OoO processor featuring a 4-way set-associative L1 cache and branch prediction for optimized execution. Course final project of ECE411@UIUC FA24.
 
 
