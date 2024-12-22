@@ -1,29 +1,29 @@
-//import "DPI-C" function string getenv(input string env_name);
-
 module top_tb;
 
     timeunit 1ps;
     timeprecision 1ps;
 
-    //int clock_half_period_ps = getenv("ECE411_CLOCK_PERIOD_PS").atoi() / 2;
-    int clock_half_period_ps = 10 / 2;
+    int clock_half_period_ps;
+    longint timeout;
+    initial begin
+        $value$plusargs("CLOCK_PERIOD_PS_ECE411=%d", clock_half_period_ps);
+        clock_half_period_ps = clock_half_period_ps / 2;
+        $value$plusargs("TIMEOUT_ECE411=%d", timeout);
+    end
 
     bit clk;
     always #(clock_half_period_ps) clk = ~clk;
 
     bit rst;
 
-    //int timeout = 10000000; // in cycles, change according to your needs
-    int timeout = 2_000_000_000; // in cycles, change according to your needs
-
-
-    mem_itf_banked bmem_itf(.*);
+    mem_itf_banked mem_itf(.*);
 
    `ifdef RND_TEST
-    random_tb random_tb(.itf(bmem_itf)); // For randomized testing
-    rob_mon  rob_tom ( .* , .rob2mon_itf( dut.u_ooo.rob2mon_itf ) ) ;
+    random_tb random_tb(.itf(mem_itf)); // For randomized testing
     `else
-    banked_memory banked_memory(.itf(bmem_itf));
+    //banked_memory banked_memory(.itf(mem_itf));
+    dram_w_burst_frfcfs_controller mem(.itf(mem_itf));
+
     `endif
 
     mon_itf #(.CHANNELS(8)) mon_itf(.*);
@@ -34,44 +34,48 @@ module top_tb;
         .clk            (clk),
         .rst            (rst),
 
-        .bmem_addr  (bmem_itf.addr  ),
-        .bmem_read  (bmem_itf.read  ),
-        .bmem_write (bmem_itf.write ),
-        .bmem_wdata (bmem_itf.wdata ),
-        .bmem_ready (bmem_itf.ready ),
-        .bmem_raddr (bmem_itf.raddr ),
-        .bmem_rdata (bmem_itf.rdata ),
-        .bmem_rvalid(bmem_itf.rvalid)
+        .bmem_addr  (mem_itf.addr  ),
+        .bmem_read  (mem_itf.read  ),
+        .bmem_write (mem_itf.write ),
+        .bmem_wdata (mem_itf.wdata ),
+        .bmem_ready (mem_itf.ready ),
+        .bmem_raddr (mem_itf.raddr ),
+        .bmem_rdata (mem_itf.rdata ),
+        .bmem_rvalid(mem_itf.rvalid)
     );
 
     `include "rvfi_reference.svh"
 
     initial begin
-//        $fsdbDumpfile("dump.fsdb");
-//        $fsdbDumpvars(0, "+all");
+        //$fsdbDumpfile("dump.fsdb");
+        //if ($test$plusargs("NO_DUMP_ALL_ECE411")) begin
+        //    $fsdbDumpvars(0, dut, "+all");
+        //    $fsdbDumpoff();
+        //end else begin
+        //    $fsdbDumpvars(0, "+all");
+        //end
         rst = 1'b1;
         repeat (2) @(posedge clk);
         rst <= 1'b0;
-
     end
 
     always @(posedge clk) begin
-        for (int unsigned i=0; i < 8; ++i) begin
+        for (int unsigned i = 0; i < 8; ++i) begin
             if (mon_itf.halt[i]) begin
                 $finish;
             end
         end
         if (timeout == 0) begin
             $error("TB Error: Timed out");
-            $finish;
+            $fatal;
         end
         if (mon_itf.error != 0) begin
             repeat (5) @(posedge clk);
-            $finish;
+            $fatal;
         end
-        if (bmem_itf.error != 0) begin
+        if (mem_itf.error != 0) begin
             repeat (5) @(posedge clk);
-            $finish;
+            $fatal;
         end
         timeout <= timeout - 1;
     end

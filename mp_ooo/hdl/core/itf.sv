@@ -100,7 +100,7 @@ interface dec2rvs_itf #(
     parameter  TAG_W       = 32'D4
    ,parameter  OPC_W       = 32'D4  
    ,parameter  ROB_DEPTH   = 32'D16
-   ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
+   ,parameter  RPW   = $clog2(ROB_DEPTH)
 
 ) () ;
 
@@ -116,7 +116,11 @@ interface dec2rvs_itf #(
    logic [31:0]      src1_wdata  ;
    logic [31:0]      src2_wdata  ;
    logic [11:0]      offset  ;
-   logic [ROB_PTR_W-1:0]   inst_id     ;
+   logic [RPW-1:0]   inst_id     ;
+
+   logic             wr_rd       ;
+   logic             predict_valid ;
+   logic             predict_taken ;
 
    modport dec (
 
@@ -132,6 +136,9 @@ interface dec2rvs_itf #(
       ,output  src2_wdata
       ,output  offset
       ,output  inst_id
+      ,output  predict_valid
+      ,output  predict_taken
+      ,output  wr_rd
    );
 
    modport rvs (
@@ -148,7 +155,9 @@ interface dec2rvs_itf #(
       ,input   src2_wdata
       ,input   offset
       ,input   inst_id
-
+      ,input  predict_valid
+      ,input  predict_taken
+      ,input   wr_rd
    );
 
 endinterface
@@ -170,6 +179,8 @@ interface rvs2exu_itf #(
    logic [31:0]            src2     ;
    logic [11:0]            offset   ;
    logic [ROB_PTR_W-1:0]   inst_id  ;
+   logic             predict_valid ;
+   logic             predict_taken ;
    
    modport rvs (
        output  req   
@@ -180,6 +191,9 @@ interface rvs2exu_itf #(
       ,output  src2  
       ,output  offset
       ,output  inst_id
+      ,output  predict_valid
+      ,output  predict_taken
+
    );
 
    modport exu (
@@ -191,6 +205,9 @@ interface rvs2exu_itf #(
       ,input   src2  
       ,input   offset
       ,input   inst_id
+      ,input  predict_valid
+      ,input  predict_taken
+
    );
 
 endinterface
@@ -271,7 +288,7 @@ interface dec2rob_itf #(
 
     parameter  TAG_W       = 32'D4 
    ,parameter  ROB_DEPTH   = 32'D16
-   ,parameter  ROB_PTR_W   = $clog2(ROB_DEPTH)
+   ,parameter  RPW   = $clog2(ROB_DEPTH)
 
 ) () ;
 
@@ -287,7 +304,7 @@ interface dec2rob_itf #(
    logic [31:0]            rs1_rdata   ;
    logic [31:0]            rs2_rdata   ;
 
-   logic [ROB_PTR_W-1:0]   inst_id     ;
+   logic [RPW-1:0]   inst_id     ;
 
 //   logic [ROB_PTR_W-1:0]   rob_id      ;
 //   logic [TAG_W-1:0]       rs_tag      ;
@@ -391,6 +408,7 @@ interface rob2jmp_itf
    logic [31:0]            pc ;
    logic [ROB_PTR_W-1:0]   rob_id ;
    logic                   ready ;
+   logic                   is_jmp ;
 
    modport rob  (
 
@@ -398,6 +416,7 @@ interface rob2jmp_itf
       ,output  pc
       ,output  rob_id
       ,output  ready
+      ,input   is_jmp
 
    );
 
@@ -407,6 +426,7 @@ interface rob2jmp_itf
       ,input   pc
       ,input   rob_id
       ,input   ready
+      ,output  is_jmp
    );
 
 endinterface
@@ -416,14 +436,14 @@ endinterface
 interface dec2rat_itf 
 #(
 
-   parameter   ROB_PTR_W = 32'H4
+   parameter   RPW = 32'H4
 
 )
 () ;
 
    logic                   rd_wr       ;
    logic [4:0]             rd_addr     ;
-   logic [ROB_PTR_W-1:0]   rob_id      ;
+   logic [RPW-1:0]   rob_id      ;
 
    logic [4:0]             rs1_addr    ;
    logic [4:0]             rs2_addr    ;
@@ -504,6 +524,14 @@ interface rob2rat_itf #(
 
 endinterface
 
+interface rob2ifu_itf () ;
+
+   logic          flush    ;
+   logic [31:0]   pc_cur   ;
+   logic [31:0]   pc_new   ;
+
+endinterface
+
 //interface rob2mon_itf () ;
 //
 //   logic          valid    ;
@@ -524,4 +552,101 @@ endinterface
 //   logic [31:0]   mem_wdata;
 //
 //endinterface
+
+interface dmem_itf ();
+
+   logic [31:0]   addr  ;
+   logic [3:0]    rmask ;
+   logic [3:0]    wmask ;
+   logic [31:0]   rdata ;
+   logic [31:0]   wdata ;
+   logic          resp  ;
+
+   modport mst (
+
+       output  addr 
+      ,output  rmask
+      ,output  wmask
+      ,input   rdata
+      ,output  wdata
+      ,input   resp 
+   );
+
+   modport slv (
+
+       input   addr 
+      ,input   rmask
+      ,input   wmask
+      ,output  rdata
+      ,input   wdata
+      ,output  resp 
+
+   );
+
+
+endinterface
+
+interface ifu2bpu_itf ();
+
+   logic          fetch          ;
+   logic [31:0]   fetch_pc       ;
+
+   logic          predict_valid  ;
+   logic          predict_taken  ;
+   logic [31:0]   predict_pc     ;
+
+   modport ifu (
+
+       output  fetch         
+      ,output  fetch_pc      
+      ,input   predict_taken 
+      ,input   predict_pc    
+      ,input   predict_valid
+
+   );
+
+   modport bpu (
+
+       input   fetch         
+      ,input   fetch_pc      
+      ,output  predict_taken 
+      ,output  predict_pc    
+      ,output  predict_valid
+
+   );
+
+endinterface
+
+interface jmp2bpu_itf ();
+
+   logic          execute        ;
+   logic          update         ;
+   logic [31:0]   execute_pc     ;
+   logic [31:0]   execute_target ;
+   logic          execute_taken  ;
+   logic [3:0]    opc   ;
+
+   modport jmp (
+
+       output  execute      
+      ,output  update
+      ,output  execute_pc   
+      ,output  execute_target
+      ,output  execute_taken
+      ,output  opc
+
+   );
+
+   modport bpu (
+
+       input   execute      
+      ,input   update
+      ,input   execute_pc   
+      ,input   execute_target
+      ,input   execute_taken
+      ,input   opc
+
+   );
+
+endinterface
 

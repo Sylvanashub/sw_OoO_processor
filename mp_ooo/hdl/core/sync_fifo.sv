@@ -19,7 +19,7 @@ module sync_fifo #(
    ,output  logic                   is_full
    ,output  logic                   is_empty
 
-   ,output  logic  [PTR_WIDTH-1:0]  count
+//   ,output  logic  [PTR_WIDTH-1:0]  count
 );
 
 //Add extra bit for is_full/is_empty
@@ -61,15 +61,15 @@ begin
       rptr_r <= rptr_r + {{(PTR_WIDTH-1){1'H0}},1'H1} ;
 end
 
-always_ff@(posedge clk)
-begin
-   if( rst )
-      count <= '0 ;
-   else if( wr_valid && ~rd_valid )
-      count <= count + {{(PTR_WIDTH-1){1'H0}},1'H1} ;
-   else if( ~wr_valid && rd_valid )
-      count <= count - {{(PTR_WIDTH-1){1'H0}},1'H1} ;
-end
+//always_ff@(posedge clk)
+//begin
+//   if( rst )
+//      count <= '0 ;
+//   else if( wr_valid && ~rd_valid )
+//      count <= count + {{(PTR_WIDTH-1){1'H0}},1'H1} ;
+//   else if( ~wr_valid && rd_valid )
+//      count <= count - {{(PTR_WIDTH-1){1'H0}},1'H1} ;
+//end
 
 
 always_ff@(posedge clk)

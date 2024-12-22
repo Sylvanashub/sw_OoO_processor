@@ -45,6 +45,13 @@ logic   [255:0] dfp0_rdata ;
 logic   [255:0] dfp0_wdata ;
 logic           dfp0_resp  ;
 
+logic   [31:0]  dmem_addr  ;
+logic   [3:0]   dmem_rmask ;
+logic   [3:0]   dmem_wmask ;
+logic   [31:0]  dmem_rdata ;
+logic   [31:0]  dmem_wdata ;
+logic           dmem_resp  ;
+
 
 cache u_icache ( 
 
@@ -88,22 +95,48 @@ cacheline_adapter u_cacheline_adapter ( .* ) ;
 
 ooo u_ooo (
 
-    .clk          ( clk )  //i logic          
-   ,.rst          ( rst )  //i logic          
-   
+//    .clk          ( clk )  //i logic          
+//   ,.rst          ( rst )  //i logic          
+ 
+    .*
    ,.imem_addr    ( ufp1_addr    )  //o logic   [31:0] 
    ,.imem_rmask   ( ufp1_rmask   )  //o logic   [3:0]  
    ,.imem_rdata   ( ufp1_rdata   )  //i logic   [31:0] 
    ,.imem_resp    ( ufp1_resp    )  //i logic          
 
-   ,.dmem_addr    ( ufp0_addr    )  //o logic   [31:0] 
-   ,.dmem_rmask   ( ufp0_rmask   )  //o logic   [3:0]  
-   ,.dmem_wmask   ( ufp0_wmask   )  //o logic   [3:0]  
-   ,.dmem_rdata   ( ufp0_rdata   )  //i logic   [31:0] 
-   ,.dmem_wdata   ( ufp0_wdata   )  //o logic   [31:0] 
-   ,.dmem_resp    ( ufp0_resp    )  //i logic      
+//   ,.dmem_addr    ( ufp0_addr    )  //o logic   [31:0] 
+//   ,.dmem_rmask   ( ufp0_rmask   )  //o logic   [3:0]  
+//   ,.dmem_wmask   ( ufp0_wmask   )  //o logic   [3:0]  
+//   ,.dmem_rdata   ( ufp0_rdata   )  //i logic   [31:0] 
+//   ,.dmem_wdata   ( ufp0_wdata   )  //o logic   [31:0] 
+//   ,.dmem_resp    ( ufp0_resp    )  //i logic      
+
 
 );
 
+dmem_itf mst_itf() ;
+dmem_itf slv_itf() ;
+
+pcsb u_pcsb (
+   .*
+);
+
+//dtcm u_dtcm (
+//   .*
+//);
+
+assign slv_itf.addr  = dmem_addr    ;
+assign slv_itf.rmask = dmem_rmask   ;
+assign slv_itf.wmask = dmem_wmask   ;
+assign dmem_rdata    = slv_itf.rdata;
+assign slv_itf.wdata = dmem_wdata   ;
+assign dmem_resp     = slv_itf.resp ;
+
+assign ufp0_addr     = mst_itf.addr  ;
+assign ufp0_rmask    = mst_itf.rmask ; 
+assign ufp0_wmask    = mst_itf.wmask ; 
+assign ufp0_wdata    = mst_itf.wdata ;
+assign mst_itf.rdata = ufp0_rdata    ;
+assign mst_itf.resp  = ufp0_resp     ;
 
 endmodule : cpu

@@ -58,7 +58,7 @@ logic             lsq_rd   ;
 logic [1:0] state_r ;
 logic [1:0] state_nxt ;
 
-wire _x = lsu2cdb_itf.rdy ;
+wire _x = lsu2cdb_itf.rdy | rvs2lsu_itf.predict_valid | rvs2lsu_itf.predict_taken ;
 //logic       wr_vld ;
 //logic       rd_vld ;
 //
@@ -168,7 +168,8 @@ assign rvs2lsu_itf.rdy = ~is_full ;
 //------------------------------------------------------------------------------
 logic [31:0]            cdb_wdata   ;
 logic [3:0]             cdb_opc     ;
-assign dmem_addr  = {lsq_entries[rptr[PTR_W-1:0]].addr[31:2],2'H0} ;
+//assign dmem_addr  = {lsq_entries[rptr[PTR_W-1:0]].addr[31:2],2'H0} ;
+assign dmem_addr  = lsq_entries[rptr[PTR_W-1:0]].addr ;
 logic [1:0] baddr  ;//= lsq_entries[rptr[PTR_W-1:0]].addr[1:0] ;
 logic [1:0] baddr_nxt ;
 assign baddr_nxt = lsq_entries[rptr[PTR_W-1:0]].addr[1:0] ;
@@ -224,7 +225,8 @@ end
 
 
 //store also need cdb to write tag to flag that store instruction is done
-assign lsu2cdb_itf.req     = req_r || ((state_r == LOAD || state_r == STORE) && dmem_resp) ;
+//assign lsu2cdb_itf.req     = req_r || ((state_r == LOAD || state_r == STORE) && dmem_resp) ;
+assign lsu2cdb_itf.req     = req_r || ((state_r == LOAD && dmem_resp) || state_r == STORE ) ;
 //assign lsu2cdb_itf.tag     = lsq_entries[rptr[PTR_W-1:0]].tag ;
 assign lsu2cdb_itf.wdata   = req_r ? cdb_wdata_r : cdb_wdata ;
 //assign lsu2cdb_itf.inst_id = lsq_entries[rptr[PTR_W-1:0]].inst_id ;
@@ -249,15 +251,15 @@ always_comb
 begin
    if( lsq_rd && ~lsq_entries[rptr[PTR_W-1:0]].opc[3] )
    begin
-      //unique case( lsq_entries[rptr[PTR_W-1:0]].opc )
-      //lsu_op_lb   , 
-      //lsu_op_lbu  : dmem_rmask = 4'H1<<baddr[1:0] ;
-      //lsu_op_lh   ,
-      //lsu_op_lhu  : dmem_rmask = baddr[1] ? 4'B1100 : 4'B0011 ;
-      //lsu_op_lw   : dmem_rmask = '1 ;
-      //default     : dmem_rmask = '0 ;
-      //endcase
-      dmem_rmask = '1 ;
+      unique case( lsq_entries[rptr[PTR_W-1:0]].opc )
+      lsu_op_lb   , 
+      lsu_op_lbu  : dmem_rmask = 4'H1<<baddr_nxt[1:0] ;
+      lsu_op_lh   ,
+      lsu_op_lhu  : dmem_rmask = baddr_nxt[1] ? 4'B1100 : 4'B0011 ;
+      lsu_op_lw   : dmem_rmask = '1 ;
+      default     : dmem_rmask = '0 ;
+      endcase
+      //dmem_rmask = '1 ;
    end
    else
    begin

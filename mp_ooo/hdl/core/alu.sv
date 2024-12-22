@@ -17,6 +17,7 @@ import rv32i_types::*;
 
 );
 
+
 logic is_full  ;
 logic wr_vld   ;
 logic rd_vld   ;
@@ -50,6 +51,20 @@ always_comb begin
         default     : aluout = 'x;
     endcase
 end
+
+//------------------------------------------------------------------------------
+// implement with comb 
+//------------------------------------------------------------------------------
+/*
+assign alu2cdb_itf.req     = rvs2alu_itf.req ;
+assign rvs2alu_itf.rdy     = alu2cdb_itf.rdy ;
+      
+assign alu2cdb_itf.tag     = rvs2alu_itf.tag ;
+assign alu2cdb_itf.wdata   = aluout ;
+assign alu2cdb_itf.inst_id = rvs2alu_itf.inst_id ;
+
+wire xx = clk | rst ;
+*/
 
 //always_ff @(posedge clk) 
 //begin
@@ -112,7 +127,7 @@ end
 
 assign rvs2alu_itf.rdy = ~is_full || rd_vld ; 
 
-wire x = |rvs2alu_itf.offset ;
+wire x = |rvs2alu_itf.offset | rvs2alu_itf.predict_valid | rvs2alu_itf.predict_taken ;
 
 endmodule
 

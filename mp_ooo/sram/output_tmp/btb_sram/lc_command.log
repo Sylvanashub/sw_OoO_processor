@@ -1,0 +1,10 @@
+#@ # 
+#@ # Running lc_shell Version T-2022.03 for linux64 -- Feb 22, 2022
+#@ # Date:   Mon Dec 16 14:12:19 2024
+#@ # Run by: gxli@dw176
+#@ 
+
+read_lib btb_sram_TT_1p0V_25C.lib
+write_lib btb_sram_TT_1p0V_25C
+write_lib btb_sram_TT_1p0V_25C_lib
+exit

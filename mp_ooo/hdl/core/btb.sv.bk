@@ -1,0 +1,77 @@
+
+module btb #(
+
+   parameter   BTB_SIZE = 8
+
+) (
+
+    input   logic          clk
+   ,input   logic          rst
+
+   ,input   logic [31:0]   pc
+   ,input   logic [31:0]   target
+   ,input   logic          update
+
+   ,input   logic [31:0]   fetch_pc
+   ,output  logic [31:0]   predict_pc
+   ,output  logic          predict_valid
+
+);
+
+localparam   PC_W  = $clog2(BTB_SIZE) ;
+
+typedef struct {
+   logic [31:0]   pc       ;
+   logic [31:0]   target   ;
+   logic          valid    ;
+} btb_entry_t ;
+
+btb_entry_t entries [ BTB_SIZE ] ;
+
+//logic [BTB_SIZE-1:0] btb_match   ;
+//logic [31:0] pre_predic_pc [BTB_SIZE]   ;
+
+genvar i ;
+
+generate
+
+for(i=0;i<BTB_SIZE;i++)
+begin : btb_ent
+
+   always_ff@(posedge clk)
+   begin
+      if( rst )
+      begin
+         entries[i].pc     <= '0 ;
+         entries[i].target <= '0 ;
+         entries[i].valid  <= '0 ;
+      end
+      else if( update && i[0+:PC_W] == pc[2+:PC_W])
+      begin
+         entries[i].pc     <= pc ;
+         entries[i].target <= target ;
+         entries[i].valid  <= '1 ;
+      end
+   end
+
+   //assign btb_match[i] = entries[i].valid && (entries[i].pc == fetch_pc) ;
+   //assign pre_predic_pc[i] = {32{btb_match[i]}} & entries[i].target ;
+
+end
+
+endgenerate
+
+//always_comb
+//begin
+//   predict_pc = '0 ;
+//   for(int i=0;i<BTB_SIZE;i++)
+//   begin
+//      predict_pc = predict_pc | pre_predic_pc[i] ;
+//   end
+//end
+
+//assign predict_valid = |btb_match ;
+assign predict_valid = entries[fetch_pc[2+:PC_W]].pc == fetch_pc && entries[fetch_pc[2+:PC_W]].valid ;
+assign predict_pc = entries[fetch_pc[2+:PC_W]].target ;
+
+endmodule

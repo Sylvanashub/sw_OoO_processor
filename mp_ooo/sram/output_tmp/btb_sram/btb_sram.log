@@ -1,0 +1,62 @@
+[2024-12-16 14:01:08.759234] |==============================================================================|
+[2024-12-16 14:01:08.761107] |=========                      OpenRAM v1.2.48                       =========|
+[2024-12-16 14:01:08.762193] |=========                                                            =========|
+[2024-12-16 14:01:08.762831] |=========               VLSI Design and Automation Lab               =========|
+[2024-12-16 14:01:08.763527] |=========        Computer Science and Engineering Department         =========|
+[2024-12-16 14:01:08.764202] |=========            University of California Santa Cruz             =========|
+[2024-12-16 14:01:08.764861] |=========                                                            =========|
+[2024-12-16 14:01:08.765724] |=========          Usage help: openram-user-group@ucsc.edu           =========|
+[2024-12-16 14:01:08.766475] |=========        Development help: openram-dev-group@ucsc.edu        =========|
+[2024-12-16 14:01:08.767226] |=========                See LICENSE for license info                =========|
+[2024-12-16 14:01:08.768018] |==============================================================================|
+[2024-12-16 14:01:08.768779] ** Start: 12/16/2024 14:01:08
+[2024-12-16 14:01:08.769614] Technology: freepdk45
+[2024-12-16 14:01:08.770462] Total size: 896 bits
+[2024-12-16 14:01:08.771331] Word size: 56
+Words: 16
+Banks: 1
+[2024-12-16 14:01:08.772241] RW ports: 1
+R-only ports: 0
+W-only ports: 0
+[2024-12-16 14:01:08.773174] Design supply routing skipped. Supplies will have multiple must-connect pins. (route_supplies=True to enable supply routing).
+[2024-12-16 14:01:08.774243] DRC/LVS/PEX is only run on the top-level design to save run-time (inline_lvsdrc=True to do inline checking).
+[2024-12-16 14:01:08.775233] DRC/LVS/PEX is disabled (check_lvsdrc=True to enable).
+[2024-12-16 14:01:08.776354] Characterization is disabled (using analytical delay models) (analytical_delay=False to simulate).
+[2024-12-16 14:01:08.777463] Only generating nominal corner timing.
+[2024-12-16 14:01:08.778664] Words per row: None
+[2024-12-16 14:01:08.779875] Output files are: 
+[2024-12-16 14:01:08.781890] /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.lvs
+[2024-12-16 14:01:08.782994] /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.sp
+[2024-12-16 14:01:08.784068] /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.v
+[2024-12-16 14:01:08.785138] /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.lib
+[2024-12-16 14:01:08.786258] /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.py
+[2024-12-16 14:01:08.787506] /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.html
+[2024-12-16 14:01:08.788552] /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.log
+[2024-12-16 14:01:08.789524] /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.lef
+[2024-12-16 14:01:08.790571] /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.gds
+[2024-12-16 14:01:10.926202] ** Submodules: 2.1 seconds
+[2024-12-16 14:01:11.015084] ** Placement: 0.1 seconds
+[2024-12-16 14:01:26.667031] ** Routing: 15.7 seconds
+[2024-12-16 14:01:26.672448] ** Verification: 0.0 seconds
+[2024-12-16 14:01:26.673238] ** SRAM creation: 17.8 seconds
+[2024-12-16 14:01:26.673898] SP: Writing to /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.sp
+[2024-12-16 14:01:26.791297] ** Spice writing: 0.1 seconds
+[2024-12-16 14:01:26.792267] DELAY: Writing stimulus...
+[2024-12-16 14:01:26.971822] ** DELAY: 0.2 seconds
+[2024-12-16 14:01:27.002993] GDS: Writing to /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.gds
+[2024-12-16 14:01:27.147363] ** GDS: 0.1 seconds
+[2024-12-16 14:01:27.148000] LEF: Writing to /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.lef
+[2024-12-16 14:01:27.202244] ** LEF: 0.1 seconds
+[2024-12-16 14:01:27.202990] LVS: Writing to /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.lvs.sp
+[2024-12-16 14:01:27.234412] ** LVS writing: 0.0 seconds
+[2024-12-16 14:01:27.235063] LIB: Characterizing... 
+[2024-12-16 14:01:27.492707] ** Characterization: 0.3 seconds
+[2024-12-16 14:01:27.493529] Config: Writing to /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.py
+[2024-12-16 14:01:27.493919] ** Config: 0.0 seconds
+[2024-12-16 14:01:27.530389] Datasheet: Writing to /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.html
+[2024-12-16 14:01:27.548765] ** Datasheet: 0.1 seconds
+[2024-12-16 14:01:27.549252] Verilog: Writing to /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram.v
+[2024-12-16 14:01:27.550436] ** Verilog: 0.0 seconds
+[2024-12-16 14:01:27.550855] Extended Config: Writing to /pool/gxli/project/Idlefish/mp/mp_ooo_adv/sram/output/btb_sram/btb_sram_extended.py
+[2024-12-16 14:01:27.552022] ** Extended Config: 0.0 seconds
+[2024-12-16 14:01:27.552888] ** End: 18.8 seconds

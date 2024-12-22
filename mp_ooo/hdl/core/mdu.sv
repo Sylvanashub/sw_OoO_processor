@@ -47,7 +47,7 @@ logic div_complete   ;
 
 logic div_divide_by_0   ;
 logic [4:0] _x ;
-assign _x[4] = |rvs2mdu_itf.offset ;
+assign _x[4] = |rvs2mdu_itf.offset | rvs2mdu_itf.predict_valid | rvs2mdu_itf.predict_taken ;
 
 
 logic [31:0] div_quotient ;
@@ -107,7 +107,10 @@ begin
       exc_quotient <= '0 ;
       exc_remainder <= '0 ;
    end
-   else if( is_div_opc )
+   //else if( is_div_opc )
+   // only update when req is assert
+   // otherwise exc_quotient and exc_remainder will change when writing result to cdb
+   else if( is_div_opc && wr_vld )
    begin
       if( opd_by_zero )
       begin
@@ -175,25 +178,6 @@ begin
    end
 end
 
-`ifdef IMP_MUL_BY_RTL
-
-logic signed [63:0]  mul_res_nxt ;
-logic signed [63:0]  mul_res ;
-
-assign mul_res_nxt = signed'(a) * signed'(b) ;
-
-always_ff@(posedge clk)
-begin
-   if( rst )
-      mul_res <= '0 ;
-   else if( rvs2mdu_itf.req && rvs2mdu_itf.rdy)
-      mul_res <= mul_res_nxt ;
-end
-
-assign mul_complete = 1'H1 ;
-
-`else
-
 logic [63:0]  mul_res ;
 logic mul_start ;
 
@@ -218,8 +202,6 @@ DW_mult_seq #(
    .complete   (mul_complete),  
    .product    ({_x[3:2],mul_res}) 
 );
-
-`endif
 
 //always_ff@(posedge clk)
 //begin

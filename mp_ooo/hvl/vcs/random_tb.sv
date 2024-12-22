@@ -28,7 +28,7 @@ import rv32i_types::*;
 
 
    task do_dmem_read ( bit [31:0] bAddr , bit [31:0] bInstAry [8] ) ;
-      
+      //$display("@%t [INF] Waiting for dmem read...",$time);
       itf.ready   <= '0 ;
       itf.rvalid  <= '1;
       itf.raddr   <= bAddr;
@@ -45,6 +45,9 @@ import rv32i_types::*;
    endtask
 
    task end_of_sim ();
+      $display("@%t [INF] Waiting for end_of_sim ...",$time);
+   while(1)
+   begin
       @(posedge itf.clk iff itf.read);
       itf.ready <= '0 ;
       itf.rvalid  <= '1;
@@ -57,7 +60,7 @@ import rv32i_types::*;
       end
       itf.rvalid <= '0 ;
       itf.ready <= '1 ;
-
+   end
    endtask
 
     // Do a bunch of LUIs to get useful register state.
@@ -241,11 +244,102 @@ import rv32i_types::*;
 
    endtask
 
+   task run_direct_jalr_instrs ();
+
+      @(posedge itf.clk iff (itf.read));
+
+      for(int i=0;i<8;i++)
+      begin
+         bInstAry[i] = 32'H0000_0013 ;
+      end
+
+      gen.randomize() with {
+          instr.j_type.opcode == op_b_lui    ;
+          instr.j_type.rd     == 5'H1        ;
+          //instr.j_type.imm    == 20'H12345   ;
+      };
+      bInstAry[0] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.i_type.opcode == op_b_imm    ;
+          instr.i_type.rs1    == 5'H1        ;
+          instr.i_type.funct3 == arith_f3_add;
+          instr.i_type.rd     == 5'H1        ;
+          //instr.i_type.i_imm  == 12'H1234    ;
+          instr.i_type.i_imm[11]  == 1'H0    ;
+          instr.i_type.i_imm[1:0]  == 2'H0    ;
+      };
+      bInstAry[1] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.i_type.opcode == op_b_jalr   ;
+          instr.i_type.rs1    == 5'H1        ;
+          instr.i_type.funct3 == '0          ;
+          instr.i_type.i_imm[1:0]  == 2'H0    ;
+      };
+      bInstAry[2] = gen.instr.word ;
+
+      do_dmem_read( '0, bInstAry ) ;
+   endtask
+
+
+   task run_direct_mem_instrs ();
+
+      @(posedge itf.clk iff (itf.read));
+
+      for(int i=0;i<8;i++)
+      begin
+         bInstAry[i] = 32'H0000_0013 ;
+      end
+
+      gen.randomize() with {
+          instr.j_type.opcode == op_b_lui    ;
+          instr.j_type.rd     == 5'H1        ;
+          //instr.j_type.imm    == 20'H12345   ;
+      };
+      bInstAry[0] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.i_type.opcode == op_b_imm    ;
+          instr.i_type.rs1    == 5'H1        ;
+          instr.i_type.funct3 == arith_f3_add;
+          instr.i_type.rd     == 5'H1        ;
+          //instr.i_type.i_imm  == 12'H1234    ;
+          instr.i_type.i_imm[1:0]  == 2'H0    ;
+      };
+      bInstAry[1] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.i_type.opcode == op_b_load   ;
+          instr.i_type.rs1    == 5'H1        ;
+          instr.i_type.funct3 inside {load_f3_lb,load_f3_lh,load_f3_lw,load_f3_lbu,load_f3_lhu} ;
+          instr.i_type.rd     != 5'H1        ;
+          //instr.i_type.i_imm  == 12'H1234    ;
+          instr.i_type.i_imm[1:0]  == 2'H0    ;
+      };
+      bInstAry[2] = gen.instr.word ;
+
+      gen.randomize() with {
+          instr.s_type.opcode == op_b_store   ;
+          instr.s_type.rs1    == 5'H1        ;
+          instr.s_type.funct3 inside {store_f3_sb,store_f3_sh,store_f3_sw} ;
+          instr.s_type.imm_s_bot[1:0]  == 2'H0    ;
+      };
+      bInstAry[3] = gen.instr.word ;
+
+      do_dmem_read( '0, bInstAry ) ;
+
+   endtask
+
     // Note that this memory model is not consistent! It ignores
     // writes and always reads out a random, valid instruction.
     task run_random_instrs();
+
+         $display("Start random instruction testing!");
         //repeat (5000) begin
-        for(int i=0;i<5000;i++) begin
+        for(int i=0;i<6000;i++) begin
+            //$display("@%t [INF] Waiting for dmem_read...",$time);
+
             @(posedge itf.clk iff (itf.read));
 
             //random response delay
@@ -253,6 +347,7 @@ import rv32i_types::*;
             begin
                @(posedge itf.clk);
             end
+            //$display("@%t [INF] generate instruction ...",$time);
 
             // Always read out a valid instruction.
             //if (itf.read) begin
@@ -266,56 +361,32 @@ import rv32i_types::*;
                   ,2     //reg-reg
                   //,4     //store
                   //,(1<<3)//load
-                  //,(1<<4)//br
+                  ,(1<<4)//br
                   //,(1<<5)//jalr
-                  //,(1<<6)//jal
+                  ,(1<<6)//jal
                   ,(1<<7)//auipc
                   ,(1<<8)//lui
                   ,(1<<9)//mul/div
                   } ; 
                   } ;
+
+                  if( gen.instr.j_type.opcode == op_b_jal )
+                  begin
+                     gen.instr.j_type.imm[31] = 1'H0 ;
+                  end
+
+                  if( gen.instr.b_type.opcode == op_b_br )
+                  begin
+                     gen.instr.b_type.imm_b_top[11] = 1'H0 ;
+                     gen.instr.b_type.imm_b_top[10] = 1'H1 ;
+                  end
+
                   bInstAry[j] = gen.instr.word ;
                end
-
+            //$display("@%t [INF] dmem_rvalid assert ...",$time);
                do_dmem_read( '0, bInstAry ) ;
+            //$display("@%t [INF] dmem_rvalid deassert...",$time);
 
-                //gen.randomize() with { instr_type inside {1,2,4,8,16,32,64,128,256} ; } ;
-                ////gen.randomize() with { instr_type inside {1,2,4,8,128,256} ; } ;
-                ////gen.randomize() with { instr_type dist {1:=100,2:=100,4:=1,8:=1,128:=10,256:=10} ; } ;
-                ////gen.randomize() with { instr_type inside {4} ; } ;
-                //if( gen.instr.s_type.opcode == op_b_store ) 
-                //begin
-                //  gen.instr.s_type.rs1 = '0 ;
-                //  //gen.instr.s_type.imm_s_bot[1:0] = '0 ;
-                //  case( gen.instr.i_type.funct3[1:0])
-                //  2'H1 : gen.instr.s_type.imm_s_bot[0] = '0 ;
-                //  2'H2 : gen.instr.s_type.imm_s_bot[1:0] = '0 ;
-                //  endcase
-                //end
-                //if( gen.instr.i_type.opcode == op_b_load ) 
-                //begin
-                //  gen.instr.i_type.rs1 = '0 ;
-                //  //gen.instr.i_type.i_imm[1:0] = '0 ;
-                //  case( gen.instr.i_type.funct3[1:0])
-                //  2'H1 : gen.instr.i_type.i_imm[0] = '0 ;
-                //  2'H2 : gen.instr.i_type.i_imm[1:0] = '0 ;
-                //  endcase
-                //end
-
-                ////if( i % 5 == 0 )
-                //itf.rdata[0] <= gen.instr.word;
-                //else
-                //itf.rdata[0] <= 32'H0000_0013;
-            //end
-
-            // If it's a write, do nothing and just respond.
-            //itf.resp[0] <= 1'b1;
-         //repeat($urandom()%10)
-         //begin
-         //   @(posedge itf.clk);
-         //end
-
-            //@(posedge itf.clk) itf.resp[0] <= 1'b0;
         end
     endtask : run_random_instrs
 
@@ -393,6 +464,15 @@ import rv32i_types::*;
          run_direct_test( arith_f3_t'(i[2:0]) , muldiv ) ;
       end
 
+      for(int i=0;i<64;i++)
+      begin
+         run_direct_mem_instrs();
+      end
+
+      for(int i=0;i<64;i++)
+      begin
+         run_direct_jalr_instrs();
+      end
         // Run!
         run_random_instrs();
 
@@ -405,121 +485,3 @@ import rv32i_types::*;
 endmodule : random_tb
 
 
-module rob_mon
-import rv32i_types::*;
- (
-    input   logic    clk
-   ,input   logic    rst
-   ,rob2mon_itf  rob2mon_itf
-);
-
-
-
-class alu_instr ;
-
-covergroup alu_instr_cg with function sample ( instr_t instr , bit [31:0] rs1 , bit [31:0] rs2 ) ;
- 
-   coverpoint instr.r_type.opcode {
-      bins VALID = { op_b_reg } ;
-   }
-
-   rs1_32b : coverpoint rs1 {
-      bins MAX = { 32'HFFFF_FFFF } ;
-      bins MIN = { 32'H0000_0000 } ;
-      bins MID = { [1:32'HFFFF_FFFE] } ;
-   }
-
-   rs2_32b : coverpoint rs2 {
-      bins MAX = { 32'HFFFF_FFFF } ;
-      bins MIN = { 32'H0000_0000 } ;
-      bins MID = { [1:32'HFFFF_FFFE] } ;
-   }
-
-   //rs2_5b : coverpoint rs2 {
-   //   bins MAX = { 32'H0000_001F } ;
-   //   bins MIN = { 32'H0000_0000 } ;
-   //   bins MID = { [1:32'H0000_001E] } ;
-   //}
-
-    coverpoint instr.r_type.funct7 {
-      bins ALU0   = { 7'H00 } ;
-      bins ALU1   = { 7'H20 } ;
-      bins MDU    = { 7'H01 } ;
-    }
-
-
-   operand_is_32b : cross instr.r_type.opcode, instr.r_type.funct3, instr.r_type.funct7,  rs1_32b , rs2_32b {
-
-      ignore_bins NOT_32B_OP = operand_is_32b with (
-
-         //SLL and SRX operation is excluded
-         (instr.r_type.funct3 inside {arith_f3_sll,arith_f3_sr} && instr.r_type.funct7 inside {base,variant}) ||
-         
-         //ADD/SUB/XOR .. operation 
-         (instr.r_type.funct3 inside {arith_f3_add}  && !(instr.r_type.funct7 inside {base,variant})) ||
-         (instr.r_type.funct3 inside {arith_f3_slt}  && !(instr.r_type.funct7 inside {base})) ||
-         (instr.r_type.funct3 inside {arith_f3_sltu} && !(instr.r_type.funct7 inside {base})) ||
-         (instr.r_type.funct3 inside {arith_f3_xor}  && !(instr.r_type.funct7 inside {base})) ||
-         (instr.r_type.funct3 inside {arith_f3_or}   && !(instr.r_type.funct7 inside {base})) ||
-         (instr.r_type.funct3 inside {arith_f3_and}  && !(instr.r_type.funct7 inside {base})) 
-
-      );
-
-
-      ignore_bins MUL_DIV_OP = operand_is_32b with (
-         instr.r_type.funct7 inside {muldiv}
-      );
-   }
-
-   operand_is_5b : cross instr.r_type.opcode, instr.r_type.funct3, instr.r_type.funct7,  rs1_32b , rs2_32b {
-
-      ignore_bins NOT_5B_OP = operand_is_5b with (
-
-         //SLL and SRX operation is excluded
-         (!(instr.r_type.funct3 inside {arith_f3_sll,arith_f3_sr}))  ||
-         
-         //ADD/SUB/XOR .. operation 
-         (instr.r_type.funct3 inside {arith_f3_sll}  && !(instr.r_type.funct7 inside {base})) ||
-         (instr.r_type.funct3 inside {arith_f3_sr}  && !(instr.r_type.funct7 inside {base,variant})) 
-
-      );
-
-
-      ignore_bins MUL_DIV_OP = operand_is_5b with (
-         instr.r_type.funct7 inside {muldiv}
-      );
-   }
-
-   mul_div : cross instr.r_type.opcode, instr.r_type.funct3, instr.r_type.funct7,  rs1_32b , rs2_32b {
-
-      ignore_bins NOT_MUL_DIV_OP = mul_div with (
-         !(instr.r_type.funct7 inside {muldiv})
-      );
-
-   }
-
-endgroup
-
-function new () ;
-   alu_instr_cg = new();
-endfunction
-
-function do_sample ( bit [31:0] bInst , bit [31:0] bRs1 , bit [31:0] bRs2 ) ;
-   alu_instr_cg.sample( bInst , bRs1, bRs2 ) ;
-endfunction
-
-endclass
-
-alu_instr oALU = new() ;
-
-always@(posedge clk iff rst == 1'H0 )
-begin
-   if( rob2mon_itf.valid )
-   begin
-      oALU.do_sample( rob2mon_itf.inst , rob2mon_itf.rs1_rdata , rob2mon_itf.rs2_rdata ) ;
-   end
-end
-
-endmodule
-
-//bind rob rob_cov u_rob_cov (.*) ;

@@ -94,6 +94,10 @@ covergroup instr_cg with function sample(instr_t instr);
          instr.r_type.opcode == op_b_imm && instr.r_type.funct3 == arith_f3_sll &&  instr.r_type.funct7 != base
          );
 
+         illegal_bins INST_IMM_SRX = funct7_cross with (
+         instr.r_type.opcode == op_b_imm && instr.r_type.funct3 == arith_f3_sr &&  !(instr.r_type.funct7 inside {base,variant})
+         );
+
          illegal_bins INST_REG_0 = funct7_cross with (
          //Add mul/div instruction
          //instr.r_type.opcode == op_b_reg && !(instr.r_type.funct3 inside {arith_f3_add,arith_f3_sr})  &&  instr.r_type.funct7 != base

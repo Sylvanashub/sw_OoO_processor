@@ -88,7 +88,7 @@ logic [2:0]    plru_cur ;
 logic [2:0]    plru_nxt ;
 logic [3:0]    way_sel  ;
 logic [3:0]    way_sel_r;
-
+logic ufp_access_valid ;
 logic [1:0] way_num ;
 
 assign way_num =  ((state_r == WR_BACK || state_r == ALLOCATE) ? way_sel_r[3] : way_sel[3]) ? 2'H3 :
@@ -100,7 +100,8 @@ assign way_num =  ((state_r == WR_BACK || state_r == ALLOCATE) ? way_sel_r[3] : 
 // ufp signal 
 //------------------------------------------------------------------------------
 
-assign ufp_ready = ((state_r == IDLE) || ufp_resp) ;
+//assign ufp_ready = ((state_r == IDLE) || ufp_resp) ;
+assign ufp_ready = ((state_r == IDLE) || ufp_resp || (state_r == STALL && ufp_access_valid)) ;
 always_ff@(posedge clk)
 begin
    if( rst )
@@ -134,7 +135,7 @@ begin
       state_r <= state_nxt ;
 end
 
-wire ufp_access_valid =  |ufp_rmask || |ufp_wmask ;
+assign ufp_access_valid =  |ufp_rmask || |ufp_wmask ;
 
 always_comb
 begin
@@ -172,7 +173,8 @@ begin
       else
          state_nxt = IDLE ;
    STALL :
-      if( |ufp_rmask_r || |ufp_wmask_r )
+      //if( |ufp_rmask_r || |ufp_wmask_r )
+      if( |ufp_rmask_r || |ufp_wmask_r || ufp_access_valid )
          state_nxt = CMP_TAG ;
       else
          state_nxt = IDLE ;
@@ -269,7 +271,8 @@ end
 //------------------------------------------------------------------------------
 assign cache_line_rd  = state_r == IDLE || state_r == RESP ||
                         (state_r == CMP_TAG && hit && |ufp_rmask_r ) ||  
-                        (state_r == STALL && (|ufp_rmask_r || |ufp_wmask_r)) ;
+                        (state_r == STALL && (|ufp_rmask_r || |ufp_wmask_r || ufp_access_valid )) ;
+                        //(state_r == STALL && (|ufp_rmask_r || |ufp_wmask_r)) ;
 assign cache_line_csb = ~cache_line_rd & (&cache_line_web) ;
 
 always_comb
@@ -278,6 +281,7 @@ begin
    unique case( state_r )
    IDLE,
    RESP:  cache_line_addr = ufp_addr_set ;
+   STALL : cache_line_addr = ufp_access_valid ? ufp_addr_set : ufp_addr_set_r ;
    //CMP_TAG: cache_line_addr = hit && |ufp_wmask_r ? ufp_addr_set_r : ufp_addr_set ;
    CMP_TAG: cache_line_addr = |hit_write ? ufp_addr_set_r : ufp_addr_set ;
    default: cache_line_addr = ufp_addr_set_r ;

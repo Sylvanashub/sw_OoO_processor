@@ -21,7 +21,8 @@ module rvs
 
    ,rvs2exu_itf.rvs  rvs2exu_itf
 
-   ,rvs2rob_itf.rvs  rvs2rob_itf
+//   ,rvs2rob_itf.rvs  rvs2rob_itf
+   ,input   logic    rob_full
    
    ,cdb_itf.slv      cdb_itf
 
@@ -38,6 +39,8 @@ logic [31:0]      src1 [DEPTH];
 logic [31:0]      src2 [DEPTH];
 
 logic [DEPTH-1:0] busy ;
+logic [DEPTH-1:0] predict_valid ;
+logic [DEPTH-1:0] predict_taken ;
 
 logic [ROB_PTR_W-1:0]   inst_id [DEPTH] ;
 
@@ -73,6 +76,9 @@ begin : item
          src2[i]  <= '0 ;
          opc[i]   <= '0 ;
          busy[i]  <= '0 ;
+         predict_valid[i] <= '0 ;
+         predict_taken[i] <= '0 ;
+         inst_id[i] <= '0 ;
       end
       else 
       begin
@@ -109,7 +115,10 @@ begin : item
             inst_id[i]  <= dec2rvs_itf.inst_id ;
             //if( IS_LSU == 1 ) begin : GEN_OFFSET
             offset[i]  <= dec2rvs_itf.offset ;
-            busy[i]  <= '1 ;
+            //busy[i]  <= '1 ;
+            busy[i]  <= dec2rvs_itf.wr_rd ;
+            predict_valid[i] <= dec2rvs_itf.predict_valid ;
+            predict_taken[i] <= dec2rvs_itf.predict_taken ;
             //end
          end
          else if( cdb_itf.wr && cdb_itf.tag == ({{(TAG_W-PTR_W){1'H0}},i[PTR_W-1:0]} + START_ID[TAG_W-1:0]) )
@@ -153,7 +162,8 @@ assign is_empty = extra_eq && catch_up ;
 
 //assign dec2rvs_itf.rdy = ~is_full && rvs2exu_itf.rdy ;
 //assign dec2rvs_itf.rdy = ~is_full && ~rvs2rob_itf.busy ;
-assign dec2rvs_itf.rdy = ~is_full && ~busy[wptr[PTR_W-1:0]] && ~rvs2rob_itf.busy ;
+//assign dec2rvs_itf.rdy = ~is_full && ~busy[wptr[PTR_W-1:0]] && ~rvs2rob_itf.busy ;
+assign dec2rvs_itf.rdy = ~is_full && ~busy[wptr[PTR_W-1:0]] && ~rob_full ;
 
 assign rvs2exu_itf.req     = ~is_empty && rvi_valid ;//&& exu_req ;
 assign rvs2exu_itf.tag     = {{(TAG_W-PTR_W){1'H0}},rptr[PTR_W-1:0]} + START_ID[TAG_W-1:0] ;
@@ -162,6 +172,9 @@ assign rvs2exu_itf.src1    = src1[rptr[PTR_W-1:0]] ;
 assign rvs2exu_itf.src2    = src2[rptr[PTR_W-1:0]] ;
 assign rvs2exu_itf.offset  = offset[rptr[PTR_W-1:0]] ;
 assign rvs2exu_itf.inst_id = inst_id[rptr[PTR_W-1:0]] ;
+
+assign rvs2exu_itf.predict_valid = predict_valid[rptr[PTR_W-1:0]] ;
+assign rvs2exu_itf.predict_taken = predict_taken[rptr[PTR_W-1:0]] ;
 
 wire _x = |cdb_itf.inst_id ;
 

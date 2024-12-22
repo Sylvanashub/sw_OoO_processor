@@ -23,7 +23,7 @@ VER_TRACE_END   ?= -1
 # ../hdl/core/rvs.sv
 # ../hdl/core/sync_fifo.sv
 # ../hdl/core/rfu.sv
-# ../hdl/core/grf.sv
+# ../hdl/core/gpr.sv
 # ../hdl/core/rat.sv
 # ../hdl/core/dec.sv
 # ../hdl/core/rob.sv
@@ -32,8 +32,15 @@ VER_TRACE_END   ?= -1
 # ../hdl/core/jmp.sv
 # ../hdl/core/cdb.sv
 # ../hdl/core/fetch.sv
+# ../hdl/core/btb.sv
+# ../hdl/core/bht.sv
 # ../hdl/core/ooo.sv
 # ../hdl/core/mdu.sv
+# ../hdl/core/bpu.sv
+# ../hdl/core/btb_cache.sv
+# ../hdl/core/dpsram.sv
+# ../hdl/core/pcsb.sv
+# ../hdl/core/dtcm.sv
 # ../hdl/cpu.sv
 # ../hdl/cache/lru_array.sv
 # ../hdl/cache/cacheline_adapter.sv
@@ -50,10 +57,13 @@ VER_TRACE_END   ?= -1
 # ../hvl/common/dram_w_burst_frfcfs_controller.sv
 # ../hvl/common/mon_itf.sv
 # ../hvl/vcs/rvfi_connect.sv
+# ../hvl/vcs/performance.sv
 # ../hvl/vcs/randinst.svh
 # ../hvl/vcs/top_tb.sv
 # ../hvl/vcs/instr_cg.svh
 # ../hvl/vcs/random_tb.sv
+# ../hvl/vcs/rob_mon.sv
+# ../hvl/vcs/visualization.sv
 
 
 export VCS_ARCH_OVERRIDE=linux
@@ -65,6 +75,7 @@ VCS_FLAGS += -lca
 VCS_FLAGS += -sverilog
 VCS_FLAGS += -timescale=1ps/1ps
 VCS_FLAGS += -debug_access+all
+VCS_FLAGS += -kdb
 VCS_FLAGS += -suppress=LCA_FEATURES_ENABLED
 VCS_FLAGS += -msg_config=../vcs_warn.config
 VCS_FLAGS += -xprop=../xprop.config
@@ -90,20 +101,26 @@ INST ?= jal
 #S_FILE := ../testcode/dependency_test.s
 #S_FILE := ../testcode/ls_test.s
 #S_FILE := ../testcode/$(INST).s
-#S_FILE := ../testcode/coremark_im.elf
+S_FILE := ../testcode/coremark_im.elf
 #S_FILE := ../testcode/cp3_release_benches/aes_sha.elf
 #S_FILE := ../testcode/cp3_release_benches/fft.elf
-S_FILE ?= ../testcode/cp3_release_benches/mergesort.elf
+#S_FILE ?= ../testcode/cp3_release_benches/mergesort.elf
 isa:
 	/eda/tools_22/synopsys/icc2/T-2022.03/etc/Python/bin/python3 ../bin/generate_memory_file.py -32 ../testcode/$(INST).S
 run:
 	mkdir -p vcs
+	mkdir -p spike
 	/eda/tools_22/synopsys/icc2/T-2022.03/etc/Python/bin/python3 ../bin/rvfi_reference.py
 	/eda/tools_22/synopsys/icc2/T-2022.03/etc/Python/bin/python3 ../bin/generate_memory_file.py -32 $(S_FILE)
 	cd vcs && vcs $(VCS_SRCS) $(VCS_FLAGS) -l compile.log -top top_tb -o top_tb
 	bash check_compile_error.sh
 	export ECE411_MEMLST=$(PWD)/bin/memory ;\
-	cd vcs && ./top_tb -l simulation.log -exitstatus
+	cd vcs && ./top_tb -l simulation.log -exitstatus \
+	+TIMEOUT_ECE411=$(TIMEOUT) \
+	+MEMLST_ECE411="$(PWD)/bin/memory_32.lst" \
+	+CLOCK_PERIOD_PS_ECE411=$(shell python3 $(PWD)/../bin/get_options.py clock) \
+	+BRAM_0_ON_X_ECE411=$(shell python3 $(PWD)/../bin/get_options.py bmem_x)
+
 
 vcs/top_tb: $(VCS_SRCS) $(HDRS)
 	mkdir -p vcs
@@ -119,28 +136,18 @@ run_vcs_top_tb: vcs/top_tb $(PROG)
 	rm -f vcs/dump.fsdb
 	python3 $(PWD)/../bin/get_options.py clock
 	python3 $(PWD)/../bin/get_options.py bmem_x
-	export ECE411_CLOCK_PERIOD_PS=$(shell python3 $(PWD)/../bin/get_options.py clock) ;\
-	export ECE411_BRAM_0_ON_X=$(shell python3 $(PWD)/../bin/get_options.py bmem_x) ;\
-	export ECE411_MEMLST=$(PWD)/bin/memory ;\
-	cd vcs && ./top_tb -l simulation.log -exitstatus
-#run_vcs_top_tb: vcs/top_tb $(PROG)
-#	mkdir -p spike
-#	python3 ../bin/generate_memory_file.py -32 $(PROG)
-#	rm -f vcs/dump.fsdb
-#	python3 $(PWD)/../bin/get_options.py clock
-#	python3 $(PWD)/../bin/get_options.py bmem_x
-#	cd vcs && ./top_tb -l simulation.log -exitstatus \
-#		+TIMEOUT_ECE411=$(TIMEOUT) \
-#		+CLOCK_PERIOD_PS_ECE411=$(shell python3 $(PWD)/../bin/get_options.py clock) \
-#		+BRAM_0_ON_X_ECE411=$(shell python3 $(PWD)/../bin/get_options.py bmem_x) \
-#		+MEMLST_ECE411="$(PWD)/bin/memory_32.lst"
+	cd vcs && ./top_tb -l simulation.log -exitstatus \
+		+TIMEOUT_ECE411=$(TIMEOUT) \
+		+CLOCK_PERIOD_PS_ECE411=$(shell python3 $(PWD)/../bin/get_options.py clock) \
+		+MEMLST_ECE411="$(PWD)/bin/memory_32.lst" \
+		+BRAM_0_ON_X_ECE411=$(shell python3 $(PWD)/../bin/get_options.py bmem_x)
 
 verilator/build/Vtop_tb: $(VER_SRCS) $(HDRS) $(VER_EX)
 	mkdir -p verilator
 	python3 check_sus.py
 	python3 ../bin/rvfi_reference.py
 	cd verilator ;\
-	verilator -trace-fst $(VER_FLAGS) $(VER_SRCS) --top-module top_tb --exe $(VER_EX)
+	verilator -trace-fst +define+ECE411_VER_DUMP +define+ECE411_FST_DUMP $(VER_FLAGS) $(VER_SRCS) --top-module top_tb --exe $(VER_EX)
 	cd verilator/build ;\
 	$(MAKE) --jobs=$(shell echo $(shell nproc)-2 | bc) -f Vtop_tb.mk
 
@@ -151,7 +158,7 @@ run_verilator_top_tb: verilator/build/Vtop_tb $(PROG)
 	python3 ../bin/generate_memory_file.py -32 $(PROG)
 	python3 $(PWD)/../bin/get_options.py clock
 	python3 $(PWD)/../bin/get_options.py bmem_x
-	cd verilator && ./build/Vtop_tb $(VER_TRACE_START) $(VER_TRACE_END) \
+	cd verilator && ./build/Vtop_tb \
 		+TIMEOUT_ECE411=$(TIMEOUT) \
 		+CLOCK_PERIOD_PS_ECE411=$(shell python3 $(PWD)/../bin/get_options.py clock) \
 		+BRAM_0_ON_X_ECE411=$(shell python3 $(PWD)/../bin/get_options.py bmem_x) \
@@ -163,7 +170,7 @@ run_verilator_lint: $(VER_SRCS) $(HDRS) $(VER_EX)
 	python3 check_sus.py
 	python3 ../bin/rvfi_reference.py
 	cd verilator ;\
-	verilator --lint-only $(VER_FLAGS) $(VER_SRCS) --top-module top_tb --exe $(VER_EX)
+	verilator --lint-only +define+ECE411_VER_DUMP +define+ECE411_FST_DUMP $(VER_FLAGS) $(VER_SRCS) --top-module top_tb --exe $(VER_EX)
 
 .PHONY: covrep
 covrep: vcs/top_tb.vdb
